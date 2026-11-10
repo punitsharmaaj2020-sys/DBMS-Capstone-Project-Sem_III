@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="View showtimes and book tickets for your favorite movies at MovieBook. Instant booking and seat reservation.">
+  <title>Movie Details & Booking - MovieBook</title>
+
+  <!-- Google Fonts: Poppins (300, 400, 500, 600, 700) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="mainNavbar">
+    <div class="container navbar-inner">
+      <a href="index.html" class="nav-brand" aria-label="MovieBook Home">
+        <span class="brand-icon">🎬</span>
+        <span>Movie<span class="brand-accent">Book</span></span>
+      </a>
+
+      <!-- Mobile Hamburger Button -->
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <!-- Navigation Links -->
+      <ul class="nav-links" id="navLinks">
+        <li class="nav-item">
+          <a href="index.html" class="nav-link">Home</a>
+        </li>
+        <li class="nav-item">
+          <a href="index.html#movies" class="nav-link active">Movies</a>
+        </li>
+        <li class="nav-item">
+          <a href="bookings.html" class="nav-link">My Bookings</a>
+        </li>
+        <li class="nav-item">
+          <a href="admin.html" class="nav-link">Admin</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="section-padding">
+    <div class="container">
+      <!-- Back Link -->
+      <a href="index.html#movies" class="back-link">
+        <span aria-hidden="true">&larr;</span> Back to All Movies
+      </a>
+
+      <!-- Error Alert -->
+      <div id="movieDetailsError" class="alert alert-error hidden" role="alert">
+        <span>Unable to load movie information. Please return to the homepage and select a valid movie.</span>
+      </div>
+
+      <!-- Loading Spinner -->
+      <div id="movieDetailsLoading" class="loading-container">
+        <div class="spinner"></div>
+        <p>Loading movie details & showtimes...</p>
+      </div>
+
+      <!-- Movie Details Container -->
+      <article id="movieDetailsContent" class="movie-detail-grid hidden">
+        <!-- Movie Poster Column -->
+        <div class="movie-detail-poster">
+          <img 
+            id="moviePoster" 
+            src="" 
+            alt="Movie Poster"
+            onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'480\' viewBox=\'0 0 320 480\'><rect fill=\'%231a1a2e\' width=\'320\' height=\'480\'/><text fill=\'%23b0b0b0\' font-family=\'sans-serif\' font-size=\'18\' dy=\'10.5\' font-weight=\'bold\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\'>🎬 No Poster Available</text></svg>';"
+          >
+        </div>
+
+        <!-- Movie Information Column -->
+        <div class="movie-detail-info">
+          <h1 id="movieTitle" class="movie-detail-title">Movie Title</h1>
+          
+          <div class="movie-badges-row">
+            <span id="movieGenre" class="badge badge-genre">Genre</span>
+            <span id="movieDuration" class="badge badge-info">⏱ 0 mins</span>
+            <span id="movieLanguage" class="badge badge-language" style="position: static;">Language</span>
+            <span id="movieReleaseDate" class="badge badge-info">📅 Release Date</span>
+          </div>
+
+          <h3 class="movie-overview-title">Overview</h3>
+          <p id="movieDescription" class="movie-description">Movie synopsis description goes here.</p>
+        </div>
+      </article>
+
+      <!-- Available Shows Section -->
+      <section id="showsSection" class="shows-section hidden">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Select a Showtime</h2>
+            <p class="section-subtitle">Choose your preferred screening time to reserve tickets</p>
+          </div>
+        </div>
+
+        <!-- Shows Loading Spinner -->
+        <div id="showsLoading" class="loading-container hidden">
+          <div class="spinner"></div>
+          <p>Fetching scheduled showtimes...</p>
+        </div>
+
+        <!-- Shows Grid Container -->
+        <div id="showsList" class="shows-grid">
+          <!-- Dynamically populated via js/movie.js -->
+        </div>
+
+        <!-- No Shows Fallback -->
+        <div id="noShowsMessage" class="empty-state hidden">
+          <div class="empty-state-icon">🎟️</div>
+          <h3>No Shows Scheduled</h3>
+          <p>There are currently no upcoming showtimes for this movie. Please check back later or explore other movies.</p>
+          <a href="index.html#movies" class="btn btn-secondary">Explore Other Movies</a>
+        </div>
+      </section>
+
+      <!-- Booking Form Section (Hidden until show selected) -->
+      <section id="bookingSection" class="booking-section hidden">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Ticket Booking</h2>
+            <p class="section-subtitle">Enter your details to confirm your cinema reservation</p>
+          </div>
+        </div>
+
+        <!-- Selected Show Info Banner -->
+        <div class="selected-show-banner" id="selectedShowBanner">
+          <div class="selected-show-info">
+            <h4 id="bannerMovieTitle">Movie Title</h4>
+            <p id="bannerShowDetails">Date: -- | Time: --</p>
+          </div>
+          <div class="selected-show-price">
+            <span class="text-muted" style="font-size: 0.8rem; display: block;">Price per ticket</span>
+            <span class="price-tag" id="bannerPricePerTicket">₹0</span>
+          </div>
+        </div>
+
+        <!-- Booking Form Alert -->
+        <div id="bookingAlert" class="alert hidden" role="alert"></div>
+
+        <!-- Booking Form -->
+        <form id="bookingForm" novalidate>
+          <input type="hidden" id="selectedShowId" name="showId" value="">
+
+          <div class="form-grid">
+            <!-- Customer Name -->
+            <div class="form-group">
+              <label for="customerName" class="form-label">Full Name *</label>
+              <input 
+                type="text" 
+                id="customerName" 
+                name="customerName" 
+                class="form-control" 
+                placeholder="Enter your full name" 
+                required
+              >
+            </div>
+
+            <!-- Customer Email -->
+            <div class="form-group">
+              <label for="customerEmail" class="form-label">Email Address *</label>
+              <input 
+                type="email" 
+                id="customerEmail" 
+                name="customerEmail" 
+                class="form-control" 
+                placeholder="you@example.com" 
+                required
+              >
+            </div>
+
+            <!-- Number of Tickets -->
+            <div class="form-group">
+              <label for="ticketCount" class="form-label">Number of Tickets (1-10) *</label>
+              <select id="ticketCount" name="ticketCount" class="form-control" required>
+                <option value="1" selected>1 Ticket</option>
+                <option value="2">2 Tickets</option>
+                <option value="3">3 Tickets</option>
+                <option value="4">4 Tickets</option>
+                <option value="5">5 Tickets</option>
+                <option value="6">6 Tickets</option>
+                <option value="7">7 Tickets</option>
+                <option value="8">8 Tickets</option>
+                <option value="9">9 Tickets</option>
+                <option value="10">10 Tickets</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Price Calculation Breakdown Card -->
+          <div class="price-calculation-card">
+            <div class="price-row">
+              <span>Ticket Price</span>
+              <span id="calcTicketPrice">₹0.00</span>
+            </div>
+            <div class="price-row">
+              <span>Tickets Quantity</span>
+              <span id="calcTicketQty">1</span>
+            </div>
+            <div class="price-row total-row">
+              <span>Total Payable Amount</span>
+              <span class="total-amount" id="calcTotalAmount">₹0.00</span>
+            </div>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" id="bookNowBtn" class="btn btn-primary btn-block btn-lg">
+            <span>Confirm &amp; Book Tickets Now</span>
+          </button>
+        </form>
+      </section>
+
+      <!-- Booking Confirmation Modal (Hidden by default) -->
+      <div id="bookingSuccessModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
+        <div class="modal-card">
+          <button type="button" class="modal-close-btn" id="modalCloseBtn" aria-label="Close Confirmation Modal">&times;</button>
+          
+          <div class="modal-header text-center">
+            <div style="font-size: 3.5rem; margin-bottom: 12px; color: #00e676;">🎉</div>
+            <h2 class="modal-title" id="confirmModalTitle">Booking Confirmed!</h2>
+            <p class="section-subtitle">Your cinema tickets have been reserved successfully.</p>
+          </div>
+
+          <div class="modal-body">
+            <div class="price-calculation-card" style="margin-bottom: 0;">
+              <div class="price-row">
+                <span class="text-muted">Booking Reference:</span>
+                <strong id="confirmBookingId" style="color: var(--accent-red); font-size: 1.05rem;">#BK-0000</strong>
+              </div>
+              <div class="price-row">
+                <span class="text-muted">Movie:</span>
+                <span id="confirmMovieTitle" style="font-weight: 600;">Movie Name</span>
+              </div>
+              <div class="price-row">
+                <span class="text-muted">Show Date &amp; Time:</span>
+                <span id="confirmShowTime">--</span>
+              </div>
+              <div class="price-row">
+                <span class="text-muted">Tickets Reserved:</span>
+                <span id="confirmTicketsCount">1 Ticket</span>
+              </div>
+              <div class="price-row">
+                <span class="text-muted">Customer Name:</span>
+                <span id="confirmCustomerName">--</span>
+              </div>
+              <div class="price-row">
+                <span class="text-muted">Confirmation Sent To:</span>
+                <span id="confirmCustomerEmail">--</span>
+              </div>
+              <div class="price-row total-row">
+                <span>Total Paid:</span>
+                <span class="total-amount" id="confirmTotalAmount">₹0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer" style="flex-direction: column; gap: 10px;">
+            <a href="bookings.html" id="btnViewBookings" class="btn btn-primary btn-block">
+              View My Bookings
+            </a>
+            <a href="index.html" id="btnBookAnother" class="btn btn-secondary btn-block">
+              Book Another Movie
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-brand">🎬 MovieBook</div>
+      <p>Movie Ticket Booking System &copy; 2026. Designed with passion for cinema lovers.</p>
+      <ul class="footer-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#movies">Movies</a></li>
+        <li><a href="bookings.html">My Bookings</a></li>
+        <li><a href="admin.html">Admin Panel</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <!-- Mobile Nav Script Helper -->
+  <script>
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+    if (navToggle && navLinks) {
+      navToggle.addEventListener('click', () => {
+        navToggle.classList.toggle('active');
+        navLinks.classList.toggle('active');
+        const expanded = navToggle.getAttribute('aria-expanded') === 'true' || false;
+        navToggle.setAttribute('aria-expanded', !expanded);
+      });
+    }
+  </script>
+
+  <!-- Movie Details & Booking Script -->
+  <script src="js/movie.js"></script>
+</body>
+</html>

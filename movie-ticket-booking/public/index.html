@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Book tickets for the latest blockbuster movies at MovieBook. Seamless online movie ticket booking with real-time seat availability and instant confirmation.">
+  <title>MovieBook - Book Movie Tickets Online</title>
+
+  <!-- Google Fonts: Poppins (300, 400, 500, 600, 700) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="mainNavbar">
+    <div class="container navbar-inner">
+      <a href="index.html" class="nav-brand" aria-label="MovieBook Home">
+        <span class="brand-icon">🎬</span>
+        <span>Movie<span class="brand-accent">Book</span></span>
+      </a>
+
+      <!-- Mobile Hamburger Button -->
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <!-- Navigation Links -->
+      <ul class="nav-links" id="navLinks">
+        <li class="nav-item">
+          <a href="index.html" class="nav-link active">Home</a>
+        </li>
+        <li class="nav-item">
+          <a href="#movies" class="nav-link">Movies</a>
+        </li>
+        <li class="nav-item">
+          <a href="bookings.html" class="nav-link">My Bookings</a>
+        </li>
+        <li class="nav-item">
+          <a href="admin.html" class="nav-link">Admin</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Hero Section -->
+    <header class="hero">
+      <div class="container">
+        <h1 class="hero-title">Movie Ticket <span>Booking System</span></h1>
+        <p class="hero-subtitle">Book your favorite movies online in seconds. Discover now showing blockbusters and secure your cinema experience.</p>
+        
+        <!-- Search Bar -->
+        <div class="search-container">
+          <div class="search-bar-wrapper">
+            <span class="search-icon" aria-hidden="true">🔍</span>
+            <input 
+              type="text" 
+              id="movieSearchInput" 
+              class="search-input" 
+              placeholder="Search movies by title, genre, or language..." 
+              autocomplete="off"
+            >
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Movies Section -->
+    <section class="section-padding" id="movies">
+      <div class="container">
+        <!-- Section Header -->
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Now Showing</h2>
+            <p class="section-subtitle">Catch the latest movies on the big screen</p>
+          </div>
+
+          <!-- Genre Filter Pills -->
+          <div class="filter-bar" id="genreFilters">
+            <button class="filter-chip active" data-genre="all">All Movies</button>
+            <button class="filter-chip" data-genre="Action">Action</button>
+            <button class="filter-chip" data-genre="Sci-Fi">Sci-Fi</button>
+            <button class="filter-chip" data-genre="Drama">Drama</button>
+            <button class="filter-chip" data-genre="Thriller">Thriller</button>
+            <button class="filter-chip" data-genre="Comedy">Comedy</button>
+          </div>
+        </div>
+
+        <!-- Error Message Alert -->
+        <div id="moviesError" class="alert alert-error hidden" role="alert">
+          <span>Failed to load movies. Please check if the server is running.</span>
+        </div>
+
+        <!-- Loading Spinner State -->
+        <div id="moviesLoading" class="loading-container">
+          <div class="spinner"></div>
+          <p>Loading available movies...</p>
+        </div>
+
+        <!-- Movies Grid Container -->
+        <div id="moviesGrid" class="movies-grid" style="display: none;">
+          <!-- Dynamically populated via js/main.js -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="noMoviesFound" class="empty-state hidden">
+          <div class="empty-state-icon">🎥</div>
+          <h3>No Movies Found</h3>
+          <p>We couldn't find any movies matching your search query. Try searching for something else!</p>
+          <button class="btn btn-secondary" id="resetSearchBtn">Clear Search</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-brand">🎬 MovieBook</div>
+      <p>Movie Ticket Booking System &copy; 2026. Designed with passion for cinema lovers.</p>
+      <ul class="footer-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="#movies">Movies</a></li>
+        <li><a href="bookings.html">My Bookings</a></li>
+        <li><a href="admin.html">Admin Panel</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <!-- Mobile Nav Script Helper -->
+  <script>
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+    if (navToggle && navLinks) {
+      navToggle.addEventListener('click', () => {
+        navToggle.classList.toggle('active');
+        navLinks.classList.toggle('active');
+        const expanded = navToggle.getAttribute('aria-expanded') === 'true' || false;
+        navToggle.setAttribute('aria-expanded', !expanded);
+      });
+    }
+  </script>
+
+  <!-- Main JavaScript File -->
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Admin Dashboard for MovieBook - Manage movies, scheduled shows, customer reservations, and revenue metrics.">
+  <title>Admin Dashboard - MovieBook</title>
+
+  <!-- Google Fonts: Poppins (300, 400, 500, 600, 700) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Main Stylesheet & Admin Specific Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="mainNavbar">
+    <div class="container navbar-inner">
+      <a href="index.html" class="nav-brand" aria-label="MovieBook Home">
+        <span class="brand-icon">🎬</span>
+        <span>Movie<span class="brand-accent">Book</span></span>
+      </a>
+
+      <!-- Mobile Hamburger Button -->
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <!-- Navigation Links -->
+      <ul class="nav-links" id="navLinks">
+        <li class="nav-item">
+          <a href="index.html" class="nav-link">Home</a>
+        </li>
+        <li class="nav-item">
+          <a href="index.html#movies" class="nav-link">Movies</a>
+        </li>
+        <li class="nav-item">
+          <a href="bookings.html" class="nav-link">My Bookings</a>
+        </li>
+        <li class="nav-item">
+          <a href="admin.html" class="nav-link active">Admin</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main>
+    <!-- Authentication Checking Indicator -->
+    <div id="authChecking" class="loading-container" style="padding: 100px 20px;">
+      <div class="spinner"></div>
+      <p>Verifying admin session...</p>
+    </div>
+
+    <!-- ====================================================================
+         SECTION 1: ADMIN LOGIN FORM (Shown when not authenticated)
+         ==================================================================== -->
+    <section id="adminLoginSection" class="admin-login-wrapper hidden">
+      <div class="admin-login-card">
+        <div class="admin-login-header">
+          <div class="admin-login-icon" aria-hidden="true">🔐</div>
+          <h1 class="admin-login-title">Admin Sign In</h1>
+          <p class="admin-login-subtitle">Restricted cinema management portal</p>
+        </div>
+
+        <!-- Login Error Alert -->
+        <div id="loginAlert" class="alert alert-error hidden" role="alert"></div>
+
+        <form id="adminLoginForm" novalidate>
+          <div class="form-group">
+            <label for="adminUsername" class="form-label">Username</label>
+            <input 
+              type="text" 
+              id="adminUsername" 
+              name="username" 
+              class="form-control" 
+              placeholder="Enter admin username" 
+              required
+              autocomplete="username"
+            >
+          </div>
+
+          <div class="form-group">
+            <label for="adminPassword" class="form-label">Password</label>
+            <input 
+              type="password" 
+              id="adminPassword" 
+              name="password" 
+              class="form-control" 
+              placeholder="Enter admin password" 
+              required
+              autocomplete="current-password"
+            >
+          </div>
+
+          <button type="submit" id="loginBtn" class="btn btn-primary btn-block btn-lg" style="margin-top: 24px;">
+            Sign In to Dashboard
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         SECTION 2: ADMIN DASHBOARD (Shown when authenticated)
+         ==================================================================== -->
+    <section id="adminDashboardSection" class="admin-container hidden">
+      <!-- Top Dashboard Header Bar -->
+      <div class="admin-header-bar">
+        <div class="admin-header-left">
+          <span class="admin-badge">Admin Access</span>
+          <h1 class="admin-header-title">Theater Management Console</h1>
+        </div>
+
+        <div class="admin-header-right">
+          <div class="admin-user-info">
+            <div class="admin-avatar" id="adminAvatarInitial">A</div>
+            <div>
+              <div style="font-weight: 600; color: #fff;" id="adminUserDisplay">Administrator</div>
+              <div style="font-size: 0.78rem; color: var(--text-muted);">Manager</div>
+            </div>
+          </div>
+
+          <button type="button" id="logoutBtn" class="btn btn-outline-danger btn-sm">
+            Sign Out
+          </button>
+        </div>
+      </div>
+
+      <!-- Global Admin Alert -->
+      <div id="adminGlobalAlert" class="alert hidden" role="alert"></div>
+
+      <!-- Metrics / Stats Cards Row -->
+      <div class="admin-stats-grid">
+        <!-- Stat: Total Movies -->
+        <div class="admin-stat-card">
+          <div class="admin-stat-icon icon-movies">🎬</div>
+          <div class="admin-stat-details">
+            <span class="admin-stat-value" id="statTotalMovies">0</span>
+            <span class="admin-stat-label">Total Movies</span>
+          </div>
+        </div>
+
+        <!-- Stat: Total Bookings -->
+        <div class="admin-stat-card">
+          <div class="admin-stat-icon icon-bookings">🎟️</div>
+          <div class="admin-stat-details">
+            <span class="admin-stat-value" id="statTotalBookings">0</span>
+            <span class="admin-stat-label">Total Bookings</span>
+          </div>
+        </div>
+
+        <!-- Stat: Total Revenue -->
+        <div class="admin-stat-card">
+          <div class="admin-stat-icon icon-revenue">💰</div>
+          <div class="admin-stat-details">
+            <span class="admin-stat-value" id="statTotalRevenue">₹0</span>
+            <span class="admin-stat-label">Total Revenue</span>
+          </div>
+        </div>
+
+        <!-- Stat: Tickets Sold -->
+        <div class="admin-stat-card">
+          <div class="admin-stat-icon icon-tickets">🍿</div>
+          <div class="admin-stat-details">
+            <span class="admin-stat-value" id="statTicketsSold">0</span>
+            <span class="admin-stat-label">Tickets Sold</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dashboard Tabs Navigation -->
+      <div class="admin-tabs-nav" role="tablist">
+        <button type="button" class="admin-tab-btn active" id="tabMoviesBtn" data-tab="tabMoviesPane" role="tab" aria-selected="true">
+          🎬 Movies Management
+        </button>
+        <button type="button" class="admin-tab-btn" id="tabShowsBtn" data-tab="tabShowsPane" role="tab" aria-selected="false">
+          🕒 Showtimes Scheduling
+        </button>
+        <button type="button" class="admin-tab-btn" id="tabBookingsBtn" data-tab="tabBookingsPane" role="tab" aria-selected="false">
+          📋 All Bookings
+        </button>
+      </div>
+
+      <!-- ==================================================================
+           TAB 1: MOVIES MANAGEMENT
+           ================================================================== -->
+      <div id="tabMoviesPane" class="admin-tab-pane active" role="tabpanel">
+        
+        <!-- Add Movie Form Card -->
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <h3 class="admin-card-title">➕ Add New Movie</h3>
+            <span class="text-muted" style="font-size: 0.85rem;">Enter movie details to display on the public catalog</span>
+          </div>
+
+          <form id="addMovieForm" novalidate>
+            <div class="admin-form-grid-3">
+              <div class="form-group">
+                <label for="movieTitle" class="form-label">Movie Title *</label>
+                <input type="text" id="movieTitle" name="title" class="form-control" placeholder="e.g. Inception" required>
+              </div>
+
+              <div class="form-group">
+                <label for="movieGenre" class="form-label">Genre *</label>
+                <input type="text" id="movieGenre" name="genre" class="form-control" placeholder="e.g. Sci-Fi, Action" required>
+              </div>
+
+              <div class="form-group">
+                <label for="movieLanguage" class="form-label">Language *</label>
+                <input type="text" id="movieLanguage" name="language" class="form-control" placeholder="e.g. English, Hindi" required>
+              </div>
+            </div>
+
+            <div class="admin-form-grid-3">
+              <div class="form-group">
+                <label for="movieDuration" class="form-label">Duration (minutes) *</label>
+                <input type="number" id="movieDuration" name="duration" class="form-control" placeholder="e.g. 148" min="1" required>
+              </div>
+
+              <div class="form-group">
+                <label for="movieReleaseDate" class="form-label">Release Date *</label>
+                <input type="date" id="movieReleaseDate" name="release_date" class="form-control" required>
+              </div>
+
+              <div class="form-group">
+                <label for="moviePoster" class="form-label">Poster URL *</label>
+                <input type="url" id="moviePoster" name="poster_url" class="form-control" placeholder="https://example.com/poster.jpg" required>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="movieDescription" class="form-label">Movie Description / Synopsis *</label>
+              <textarea id="movieDescription" name="description" class="form-control" placeholder="Brief synopsis of the movie plot..." required></textarea>
+            </div>
+
+            <button type="submit" id="addMovieBtn" class="btn btn-primary">
+              Add Movie to Catalog
+            </button>
+          </form>
+        </div>
+
+        <!-- Movies List Table Card -->
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <h3 class="admin-card-title">🎥 Current Movie Catalog</h3>
+            <span class="text-muted" id="moviesCatalogCount">0 Movies in Catalog</span>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table" id="adminMoviesTable">
+              <thead>
+                <tr>
+                  <th>Poster</th>
+                  <th>Title</th>
+                  <th>Genre</th>
+                  <th>Duration</th>
+                  <th>Language</th>
+                  <th>Release Date</th>
+                  <th style="text-align: right;">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="moviesTableBody">
+                <!-- Dynamically populated via js/admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ==================================================================
+           TAB 2: SHOWTIMES SCHEDULING
+           ================================================================== -->
+      <div id="tabShowsPane" class="admin-tab-pane" role="tabpanel">
+        
+        <!-- Add Show Form Card -->
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <h3 class="admin-card-title">🕒 Schedule a New Show</h3>
+            <span class="text-muted" style="font-size: 0.85rem;">Create showtimes with custom pricing and seat allocation</span>
+          </div>
+
+          <form id="addShowForm" novalidate>
+            <div class="admin-form-grid-2">
+              <div class="form-group">
+                <label for="showMovieSelect" class="form-label">Select Movie *</label>
+                <select id="showMovieSelect" name="movie_id" class="form-control" required>
+                  <option value="" disabled selected>-- Select a movie --</option>
+                  <!-- Populated from movies -->
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="showDate" class="form-label">Show Date *</label>
+                <input type="date" id="showDate" name="show_date" class="form-control" required>
+              </div>
+            </div>
+
+            <div class="admin-form-grid-3">
+              <div class="form-group">
+                <label for="showTime" class="form-label">Show Time *</label>
+                <input type="time" id="showTime" name="show_time" class="form-control" required>
+              </div>
+
+              <div class="form-group">
+                <label for="showPrice" class="form-label">Ticket Price (₹) *</label>
+                <input type="number" id="showPrice" name="price" class="form-control" placeholder="e.g. 250" min="1" step="0.01" required>
+              </div>
+
+              <div class="form-group">
+                <label for="showTotalSeats" class="form-label">Total Seats Capacity *</label>
+                <input type="number" id="showTotalSeats" name="total_seats" class="form-control" placeholder="100" min="1" value="100" required>
+              </div>
+            </div>
+
+            <button type="submit" id="addShowBtn" class="btn btn-primary">
+              Schedule Show
+            </button>
+          </form>
+        </div>
+
+        <!-- Scheduled Shows List Card -->
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <h3 class="admin-card-title">📅 Scheduled Shows</h3>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <label for="filterShowsMovieSelect" class="form-label" style="margin-bottom: 0;">Filter by Movie:</label>
+              <select id="filterShowsMovieSelect" class="form-control" style="width: auto; min-width: 200px;">
+                <option value="all">All Movies</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table" id="adminShowsTable">
+              <thead>
+                <tr>
+                  <th>Show ID</th>
+                  <th>Movie Title</th>
+                  <th>Show Date</th>
+                  <th>Show Time</th>
+                  <th>Price</th>
+                  <th>Available / Total Seats</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody id="showsTableBody">
+                <!-- Dynamically populated via js/admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ==================================================================
+           TAB 3: ALL BOOKINGS
+           ================================================================== -->
+      <div id="tabBookingsPane" class="admin-tab-pane" role="tabpanel">
+        
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <h3 class="admin-card-title">🎟️ All Customer Bookings</h3>
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <span class="text-muted" id="adminBookingsCount">0 Total Bookings</span>
+            </div>
+          </div>
+
+          <div class="table-responsive">
+            <table class="custom-table" id="adminBookingsTable">
+              <thead>
+                <tr>
+                  <th>Booking ID</th>
+                  <th>Customer</th>
+                  <th>Email</th>
+                  <th>Movie</th>
+                  <th>Date &amp; Time</th>
+                  <th>Tickets</th>
+                  <th>Total Amount</th>
+                  <th>Status</th>
+                  <th style="text-align: right;">Action</th>
+                </tr>
+              </thead>
+              <tbody id="bookingsTableBody">
+                <!-- Dynamically populated via js/admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ====================================================================
+         EDIT MOVIE MODAL
+         ==================================================================== -->
+    <div id="editMovieModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="editModalTitle">
+      <div class="modal-card modal-admin-wide">
+        <button type="button" class="modal-close-btn" id="closeEditModalBtn" aria-label="Close Edit Modal">&times;</button>
+        
+        <div class="modal-header">
+          <h3 class="modal-title" id="editModalTitle">✏️ Edit Movie Details</h3>
+        </div>
+
+        <form id="editMovieForm" novalidate>
+          <input type="hidden" id="editMovieId" name="id">
+
+          <div class="admin-form-grid-2">
+            <div class="form-group">
+              <label for="editTitle" class="form-label">Movie Title *</label>
+              <input type="text" id="editTitle" name="title" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="editGenre" class="form-label">Genre *</label>
+              <input type="text" id="editGenre" name="genre" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="admin-form-grid-3">
+            <div class="form-group">
+              <label for="editDuration" class="form-label">Duration (mins) *</label>
+              <input type="number" id="editDuration" name="duration" class="form-control" min="1" required>
+            </div>
+
+            <div class="form-group">
+              <label for="editLanguage" class="form-label">Language *</label>
+              <input type="text" id="editLanguage" name="language" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+              <label for="editReleaseDate" class="form-label">Release Date *</label>
+              <input type="date" id="editReleaseDate" name="release_date" class="form-control" required>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="editPoster" class="form-label">Poster URL *</label>
+            <input type="url" id="editPoster" name="poster_url" class="form-control" required>
+          </div>
+
+          <div class="form-group">
+            <label for="editDescription" class="form-label">Description *</label>
+            <textarea id="editDescription" name="description" class="form-control" rows="4" required></textarea>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="cancelEditBtn">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="saveEditMovieBtn">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         DELETE MOVIE CONFIRMATION MODAL
+         ==================================================================== -->
+    <div id="deleteMovieModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle">
+      <div class="modal-card">
+        <button type="button" class="modal-close-btn" id="closeDeleteModalBtn" aria-label="Close Delete Modal">&times;</button>
+        
+        <div class="modal-header">
+          <h3 class="modal-title" id="deleteModalTitle" style="color: #ff5252;">🗑️ Delete Movie</h3>
+        </div>
+
+        <div class="modal-body">
+          <p style="color: var(--text-secondary); margin-bottom: 16px;">
+            Are you sure you want to delete <strong id="deleteMovieTitleDisplay" style="color: #fff;"></strong> from the catalog?
+          </p>
+          <p style="color: var(--status-cancelled); font-size: 0.88rem;">
+            ⚠️ This may affect associated shows and bookings.
+          </p>
+          <input type="hidden" id="deleteMovieId">
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteMovieBtn">Delete Movie</button>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-brand">🎬 MovieBook Admin Console</div>
+      <p>Movie Ticket Booking System &copy; 2026. Internal administrative dashboard.</p>
+      <ul class="footer-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#movies">Movies</a></li>
+        <li><a href="bookings.html">My Bookings</a></li>
+        <li><a href="admin.html">Admin Panel</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <!-- Mobile Nav Script Helper -->
+  <script>
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+    if (navToggle && navLinks) {
+      navToggle.addEventListener('click', () => {
+        navToggle.classList.toggle('active');
+        navLinks.classList.toggle('active');
+        const expanded = navToggle.getAttribute('aria-expanded') === 'true' || false;
+        navToggle.setAttribute('aria-expanded', !expanded);
+      });
+    }
+  </script>
+
+  <!-- Admin JavaScript Management -->
+  <script src="js/admin.js"></script>
+</body>
+</html>

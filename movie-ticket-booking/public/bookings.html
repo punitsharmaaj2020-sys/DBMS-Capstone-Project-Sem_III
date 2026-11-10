@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="View, manage, and cancel your movie ticket bookings with MovieBook. Enter your email to view all your reservations.">
+  <title>My Bookings - MovieBook</title>
+
+  <!-- Google Fonts: Poppins (300, 400, 500, 600, 700) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Navigation Bar -->
+  <nav class="navbar" id="mainNavbar">
+    <div class="container navbar-inner">
+      <a href="index.html" class="nav-brand" aria-label="MovieBook Home">
+        <span class="brand-icon">🎬</span>
+        <span>Movie<span class="brand-accent">Book</span></span>
+      </a>
+
+      <!-- Mobile Hamburger Button -->
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+
+      <!-- Navigation Links -->
+      <ul class="nav-links" id="navLinks">
+        <li class="nav-item">
+          <a href="index.html" class="nav-link">Home</a>
+        </li>
+        <li class="nav-item">
+          <a href="index.html#movies" class="nav-link">Movies</a>
+        </li>
+        <li class="nav-item">
+          <a href="bookings.html" class="nav-link active">My Bookings</a>
+        </li>
+        <li class="nav-item">
+          <a href="admin.html" class="nav-link">Admin</a>
+        </li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- Main Content -->
+  <main class="section-padding">
+    <div class="container">
+      
+      <!-- Page Header & Search Banner -->
+      <section class="bookings-search-section">
+        <div class="bookings-search-card">
+          <div style="font-size: 2.5rem; margin-bottom: 12px;">🎟️</div>
+          <h1 class="hero-title" style="font-size: 2.2rem; margin-bottom: 8px;">My Ticket <span>Bookings</span></h1>
+          <p class="section-subtitle" style="margin-bottom: 24px;">Enter your registered email address to view, verify, or cancel your reservations.</p>
+
+          <!-- Email Search Form -->
+          <form id="bookingSearchForm" novalidate>
+            <div class="search-bar-wrapper" style="border-radius: var(--radius-btn);">
+              <span class="search-icon" aria-hidden="true">✉️</span>
+              <input 
+                type="email" 
+                id="searchEmail" 
+                class="search-input" 
+                placeholder="Enter your booking email (e.g. john@example.com)" 
+                required
+              >
+              <button type="submit" id="searchBtn" class="btn btn-primary btn-sm">
+                Search Bookings
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      <!-- Global Alert Container -->
+      <div id="bookingsAlert" class="alert hidden" role="alert"></div>
+
+      <!-- Loading Spinner -->
+      <div id="bookingsLoading" class="loading-container hidden">
+        <div class="spinner"></div>
+        <p>Retrieving your ticket reservations...</p>
+      </div>
+
+      <!-- Bookings Results Section (Hidden until search is performed) -->
+      <section id="bookingsResults" class="hidden">
+        <!-- Results Header -->
+        <div class="section-header" style="margin-top: 20px;">
+          <div>
+            <h2 class="section-title">Your Reservations</h2>
+            <p id="resultsSummaryText" class="section-subtitle">Showing bookings for your email</p>
+          </div>
+        </div>
+
+        <!-- Bookings Container (Cards / Responsive Table) -->
+        <div id="bookingsContainer">
+          <!-- Populated dynamically via js/bookings.js -->
+        </div>
+
+        <!-- Empty State (No bookings found) -->
+        <div id="noBookingsState" class="empty-state hidden">
+          <div class="empty-state-icon">📋</div>
+          <h3>No Bookings Found</h3>
+          <p>We couldn't find any active or past reservations under this email address. Please make sure the email matches the one you entered when booking.</p>
+          <a href="index.html#movies" class="btn btn-primary">Browse Now Showing Movies</a>
+        </div>
+      </section>
+
+      <!-- Cancel Confirmation Modal -->
+      <div id="cancelModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cancelModalTitle">
+        <div class="modal-card">
+          <button type="button" class="modal-close-btn" id="cancelModalCloseBtn" aria-label="Close Cancel Modal">&times;</button>
+          
+          <div class="modal-header">
+            <h3 class="modal-title" id="cancelModalTitle" style="color: #ff5252;">Cancel Reservation</h3>
+          </div>
+
+          <div class="modal-body">
+            <p style="color: var(--text-secondary); margin-bottom: 18px;">
+              Are you sure you want to cancel this booking? This action cannot be undone and your reserved seats will be released.
+            </p>
+
+            <div class="price-calculation-card">
+              <div class="price-row">
+                <span class="text-muted">Booking Reference:</span>
+                <strong id="modalCancelBookingId" style="color: var(--accent-red);">#BK---</strong>
+              </div>
+              <div class="price-row">
+                <span class="text-muted">Movie:</span>
+                <span id="modalCancelMovieTitle" style="font-weight: 600;">--</span>
+              </div>
+              <div class="price-row">
+                <span class="text-muted">Showtime:</span>
+                <span id="modalCancelShowTime">--</span>
+              </div>
+              <div class="price-row">
+                <span class="text-muted">Tickets to Cancel:</span>
+                <span id="modalCancelTickets">--</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" id="dismissCancelBtn">
+              Keep Booking
+            </button>
+            <button type="button" class="btn btn-danger" id="confirmCancelBtn">
+              Yes, Cancel Booking
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-brand">🎬 MovieBook</div>
+      <p>Movie Ticket Booking System &copy; 2026. Designed with passion for cinema lovers.</p>
+      <ul class="footer-links">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="index.html#movies">Movies</a></li>
+        <li><a href="bookings.html">My Bookings</a></li>
+        <li><a href="admin.html">Admin Panel</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <!-- Mobile Nav Script Helper -->
+  <script>
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+    if (navToggle && navLinks) {
+      navToggle.addEventListener('click', () => {
+        navToggle.classList.toggle('active');
+        navLinks.classList.toggle('active');
+        const expanded = navToggle.getAttribute('aria-expanded') === 'true' || false;
+        navToggle.setAttribute('aria-expanded', !expanded);
+      });
+    }
+  </script>
+
+  <!-- Bookings Management JavaScript -->
+  <script src="js/bookings.js"></script>
+</body>
+</html>

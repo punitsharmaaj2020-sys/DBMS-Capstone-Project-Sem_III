@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450" width="300" height="450">
+  <defs>
+    <linearGradient id="arrakisSky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3d1e03"/>
+      <stop offset="45%" stop-color="#b85d19"/>
+      <stop offset="75%" stop-color="#e08938"/>
+      <stop offset="100%" stop-color="#f3b562"/>
+    </linearGradient>
+    <linearGradient id="duneWave1" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#803808"/>
+      <stop offset="100%" stop-color="#b45717"/>
+    </linearGradient>
+    <linearGradient id="duneWave2" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#4e2105"/>
+      <stop offset="100%" stop-color="#7a360a"/>
+    </linearGradient>
+    <radialGradient id="spiceSun" cx="50%" cy="30%" r="30%">
+      <stop offset="0%" stop-color="#ffeedb"/>
+      <stop offset="35%" stop-color="#ffb703"/>
+      <stop offset="100%" stop-color="#b85d19" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="300" height="450" fill="url(#arrakisSky)"/>
+
+  <!-- Giant Blazing Sun of Arrakis -->
+  <circle cx="150" cy="130" r="75" fill="url(#spiceSun)"/>
+
+  <!-- Distant Dunes -->
+  <path d="M 0,220 Q 80,180 160,210 T 300,195 L 300,450 L 0,450 Z" fill="url(#duneWave1)" opacity="0.8"/>
+
+  <!-- Mid Dune -->
+  <path d="M 0,260 Q 120,215 220,250 T 300,240 L 300,450 L 0,450 Z" fill="url(#duneWave2)"/>
+
+  <!-- Foreground Dune with Ridge -->
+  <path d="M 0,310 Q 140,270 300,320 L 300,450 L 0,450 Z" fill="#2b1202"/>
+
+  <!-- Giant Sandworm Silhouette Rising in Distance -->
+  <path d="M 120,210 C 130,150 170,150 180,210 Z" fill="#2b1202"/>
+  <ellipse cx="150" cy="180" rx="14" ry="7" fill="#f3b562" opacity="0.7"/>
+
+  <!-- Paul Atreides and Chani Silhouette on Dune Ridge -->
+  <g transform="translate(140, 275) scale(0.7)">
+    <!-- Paul with Cloak and Crysknife -->
+    <path d="M 0,-30 C 5,-30 10,-25 8,-15 C 15,-10 18,10 20,25 L -5,25 C -5,10 -3,-10 0,-30 Z" fill="#0c0500"/>
+    <circle cx="5" cy="-33" r="5" fill="#0c0500"/>
+    <line x1="20" y1="5" x2="28" y2="-15" stroke="#00b4d8" stroke-width="2"/> <!-- Glowing Blue Spice Eyes Accent -->
+  </g>
+  <g transform="translate(160, 278) scale(0.65)">
+    <!-- Chani with Cloak -->
+    <path d="M 0,-28 C 4,-28 8,-23 7,-14 C 12,-9 14,8 16,22 L -4,22 C -4,8 -2,-9 0,-28 Z" fill="#0c0500"/>
+    <circle cx="4" cy="-31" r="4.5" fill="#0c0500"/>
+  </g>
+
+  <!-- Badges -->
+  <rect x="20" y="20" width="60" height="20" rx="4" fill="#fb8500"/>
+  <text x="50" y="34" font-family="'Poppins', sans-serif" font-size="10" font-weight="700" fill="#000000" text-anchor="middle">IMAX</text>
+
+  <rect x="235" y="20" width="45" height="20" rx="4" fill="rgba(0,0,0,0.4)"/>
+  <text x="257" y="34" font-family="'Poppins', sans-serif" font-size="10" font-weight="600" fill="#ffffff" text-anchor="middle">4K</text>
+
+  <!-- Title Section -->
+  <rect x="0" y="360" width="300" height="90" fill="#180a01"/>
+  <line x1="30" y1="360" x2="270" y2="360" stroke="#f3b562" stroke-width="1.5"/>
+
+  <text x="150" y="395" font-family="'Poppins', sans-serif" font-size="20" font-weight="800" fill="#ffffff" letter-spacing="6" text-anchor="middle">DUNE: PART TWO</text>
+  <text x="150" y="415" font-family="'Poppins', sans-serif" font-size="11" font-weight="500" fill="#f3b562" letter-spacing="2" text-anchor="middle">LONG LIVE THE FIGHTERS</text>
+  <text x="150" y="432" font-family="'Poppins', sans-serif" font-size="10" font-weight="400" fill="#797993" text-anchor="middle">Sci-Fi / Adventure • 166 min • English</text>
+</svg>

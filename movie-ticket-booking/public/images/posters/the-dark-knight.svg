@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450" width="300" height="450">
+  <defs>
+    <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050813"/>
+      <stop offset="50%" stop-color="#0a1329"/>
+      <stop offset="100%" stop-color="#141a29"/>
+    </linearGradient>
+    <radialGradient id="batGlow" cx="50%" cy="32%" r="45%">
+      <stop offset="0%" stop-color="#e94560" stop-opacity="0.8"/>
+      <stop offset="40%" stop-color="#533483" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#050813" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="accentLine" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="transparent"/>
+      <stop offset="50%" stop-color="#e94560"/>
+      <stop offset="100%" stop-color="transparent"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="300" height="450" fill="url(#skyGrad)"/>
+  
+  <!-- Bat Glow -->
+  <circle cx="150" cy="150" r="130" fill="url(#batGlow)"/>
+
+  <!-- City Skyline Silhouette -->
+  <polygon points="10,450 10,320 30,320 30,350 45,350 45,280 65,280 65,360 80,360 80,300 100,300 100,340 120,340 120,270 135,270 135,250 145,250 145,270 160,270 160,330 180,330 180,290 205,290 205,350 220,350 220,260 240,260 240,340 260,340 260,310 280,310 280,350 290,350 290,450" fill="#03060d"/>
+  
+  <!-- Subtle Windows in Buildings -->
+  <g fill="#ffeb3b" opacity="0.6">
+    <rect x="50" y="295" width="2" height="4"/><rect x="56" y="295" width="2" height="4"/>
+    <rect x="50" y="310" width="2" height="4"/><rect x="56" y="310" width="2" height="4"/>
+    <rect x="85" y="315" width="2" height="3"/><rect x="92" y="315" width="2" height="3"/>
+    <rect x="125" y="285" width="3" height="4"/><rect x="170" y="305" width="2" height="3"/>
+    <rect x="225" y="275" width="3" height="5"/><rect x="232" y="275" width="3" height="5"/>
+    <rect x="225" y="290" width="3" height="5"/><rect x="232" y="290" width="3" height="5"/>
+  </g>
+
+  <!-- Bat Emblem Symbol -->
+  <g transform="translate(150, 145) scale(0.75)">
+    <path d="M 0,-45 C 15,-20 35,-15 70,-40 C 65,-5 45,35 15,45 C 8,47 0,40 0,40 C 0,40 -8,47 -15,45 C -45,35 -65,-5 -70,-40 C -35,-15 -15,-20 0,-45 Z" fill="#ffffff" opacity="0.95"/>
+    <path d="M 0,-35 C -5,-45 -8,-50 -12,-48 C -10,-42 -8,-35 -5,-30 C -20,-28 -40,-20 -60,-35 C -55,-5 -35,25 -10,38 C -4,35 0,28 0,28 C 0,28 4,35 10,38 C 35,25 55,-5 60,-35 C 40,-20 20,-28 5,-30 C 8,-35 10,-42 12,-48 C 8,-50 5,-45 0,-35 Z" fill="#0a1020"/>
+  </g>
+
+  <!-- Cinema Badge Overlay -->
+  <rect x="20" y="20" width="60" height="20" rx="4" fill="#e94560"/>
+  <text x="50" y="34" font-family="'Poppins', sans-serif" font-size="10" font-weight="700" fill="#ffffff" text-anchor="middle">IMAX</text>
+
+  <rect x="235" y="20" width="45" height="20" rx="4" fill="rgba(255,255,255,0.15)"/>
+  <text x="257" y="34" font-family="'Poppins', sans-serif" font-size="10" font-weight="600" fill="#ffffff" text-anchor="middle">4K</text>
+
+  <!-- Title Card Area -->
+  <rect x="0" y="360" width="300" height="90" fill="url(#skyGrad)"/>
+  <rect x="30" y="360" width="240" height="2" fill="url(#accentLine)"/>
+
+  <text x="150" y="395" font-family="'Poppins', sans-serif" font-size="20" font-weight="800" fill="#ffffff" letter-spacing="3" text-anchor="middle">THE DARK KNIGHT</text>
+  <text x="150" y="415" font-family="'Poppins', sans-serif" font-size="11" font-weight="500" fill="#e94560" letter-spacing="2" text-anchor="middle">CHRISTOPHER NOLAN</text>
+  <text x="150" y="432" font-family="'Poppins', sans-serif" font-size="10" font-weight="400" fill="#797993" text-anchor="middle">Action / Thriller • 152 min • English</text>
+</svg>

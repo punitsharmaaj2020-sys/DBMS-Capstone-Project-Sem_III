@@ -1,0 +1,76 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 450" width="300" height="450">
+  <defs>
+    <!-- Fire & Water Split Gradients -->
+    <linearGradient id="fireSide" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4d0800"/>
+      <stop offset="50%" stop-color="#ba181b"/>
+      <stop offset="100%" stop-color="#ffb703"/>
+    </linearGradient>
+    <linearGradient id="waterSide" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#03045e"/>
+      <stop offset="50%" stop-color="#0077b6"/>
+      <stop offset="100%" stop-color="#90e0ef"/>
+    </linearGradient>
+    <radialGradient id="centerClash" cx="50%" cy="40%" r="40%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.95"/>
+      <stop offset="30%" stop-color="#ffb703" stop-opacity="0.7"/>
+      <stop offset="60%" stop-color="#e63946" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#000000" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Left: Fire, Right: Water Split -->
+  <rect x="0" y="0" width="150" height="450" fill="url(#fireSide)"/>
+  <rect x="150" y="0" width="150" height="450" fill="url(#waterSide)"/>
+
+  <!-- Dramatic Diagonal Slash -->
+  <polygon points="135,0 165,0 150,450" fill="#0b090a" opacity="0.3"/>
+
+  <!-- Energy Clash Center -->
+  <circle cx="150" cy="180" r="120" fill="url(#centerClash)"/>
+
+  <!-- Fire Particles Left -->
+  <g fill="#ffba08" opacity="0.8">
+    <circle cx="40" cy="110" r="3"/><circle cx="70" cy="140" r="2.5"/><circle cx="50" cy="170" r="4"/>
+    <circle cx="90" cy="90" r="2"/><circle cx="110" cy="130" r="3.5"/><circle cx="30" cy="220" r="2.5"/>
+  </g>
+
+  <!-- Water Droplets Right -->
+  <g fill="#caf0f8" opacity="0.8">
+    <circle cx="260" cy="110" r="3"/><circle cx="230" cy="140" r="2.5"/><circle cx="250" cy="170" r="4"/>
+    <circle cx="210" cy="90" r="2"/><circle cx="190" cy="130" r="3.5"/><circle cx="270" cy="220" r="2.5"/>
+  </g>
+
+  <!-- Alluri Sitarama Raju (Fire/Archer) Silhouette Left -->
+  <g transform="translate(100, 210) scale(0.85)">
+    <circle cx="0" cy="-45" r="10" fill="#000000"/>
+    <path d="M -5,-35 L 10,-5 L 20,40 L -10,40 L 0,-10 Z" fill="#000000"/>
+    <!-- Drawn Bow & Flaming Arrow -->
+    <path d="M 15,-50 C 35,-20 35,20 15,40" fill="none" stroke="#ffb703" stroke-width="4"/>
+    <line x1="15" y1="-5" x2="60" y2="-5" stroke="#ffffff" stroke-width="3"/>
+  </g>
+
+  <!-- Komaram Bheem (Water/Spear) Silhouette Right -->
+  <g transform="translate(200, 210) scale(0.85)">
+    <circle cx="0" cy="-45" r="10" fill="#000000"/>
+    <path d="M 5,-35 L -10,-5 L -20,40 L 10,40 L 0,-10 Z" fill="#000000"/>
+    <!-- Roaring Spear -->
+    <line x1="-30" y1="20" x2="25" y2="-50" stroke="#caf0f8" stroke-width="4"/>
+  </g>
+
+  <!-- Badges -->
+  <rect x="20" y="20" width="70" height="20" rx="4" fill="#d90429"/>
+  <text x="55" y="34" font-family="'Poppins', sans-serif" font-size="9" font-weight="700" fill="#ffffff" text-anchor="middle">BLOCKBUSTER</text>
+
+  <rect x="235" y="20" width="45" height="20" rx="4" fill="rgba(0,0,0,0.5)"/>
+  <text x="257" y="34" font-family="'Poppins', sans-serif" font-size="10" font-weight="600" fill="#ffffff" text-anchor="middle">4K</text>
+
+  <!-- Title Section -->
+  <rect x="0" y="355" width="300" height="95" fill="#080708"/>
+  <line x1="30" y1="355" x2="150" y2="355" stroke="#ffb703" stroke-width="2"/>
+  <line x1="150" y1="355" x2="270" y2="355" stroke="#0077b6" stroke-width="2"/>
+
+  <text x="150" y="395" font-family="'Poppins', sans-serif" font-size="28" font-weight="900" fill="#ffffff" letter-spacing="8" text-anchor="middle">R R R</text>
+  <text x="150" y="415" font-family="'Poppins', sans-serif" font-size="11" font-weight="600" fill="#ffb703" letter-spacing="3" text-anchor="middle">RISE • ROAR • REVOLT</text>
+  <text x="150" y="432" font-family="'Poppins', sans-serif" font-size="10" font-weight="400" fill="#797993" text-anchor="middle">Action / Drama • 187 min • Telugu</text>
+</svg>
