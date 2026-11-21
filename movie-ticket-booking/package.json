@@ -2,23 +2,6 @@
   "name": "movie-ticket-booking",
   "version": "1.0.0",
   "description": "Movie Ticket Booking System - DBMS Capstone Project",
-  "keywords": [
-    "movie",
-    "booking",
-    "dbms",
-    "mysql"
-  ],
-  "homepage": "https://github.com/punitsharmaaj2020-sys/DBMS-Capstone-Project-Sem_III#readme",
-  "bugs": {
-    "url": "https://github.com/punitsharmaaj2020-sys/DBMS-Capstone-Project-Sem_III/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/punitsharmaaj2020-sys/DBMS-Capstone-Project-Sem_III.git"
-  },
-  "license": "ISC",
-  "author": "Punit & Akshat",
-  "type": "commonjs",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -27,8 +10,20 @@
     "test": "node scripts/test-api.js"
   },
   "dependencies": {
-    "express": "^4.18.2",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.3.1",
+    "express": "^4.22.3",
+    "jsonwebtoken": "^9.0.3",
     "mysql2": "^3.6.0",
-    "dotenv": "^16.3.1"
-  }
+    "razorpay": "^2.9.8"
+  },
+  "keywords": [
+    "movie",
+    "booking",
+    "dbms",
+    "mysql"
+  ],
+  "author": "",
+  "license": "ISC"
 }

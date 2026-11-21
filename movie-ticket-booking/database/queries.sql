@@ -1,265 +1,354 @@
--- =====================================================================
--- Movie Ticket Booking System - Useful Analytical & Operational Queries
--- Demonstrating Core DBMS Concepts: Joins, Aggregation, Subqueries, 
--- Grouping, Filtering, Set Operations, and Views
--- =====================================================================
+-- =============================================================================
+-- DATABASE QUERIES & DBMS CONCEPTS DEMONSTRATION
+-- Project: Premium Movie Ticket Booking Platform (BookMyShow-style Architecture)
+-- Target: B.Tech CSE 2nd-Year DBMS Capstone Evaluation & Technical Viva
+-- =============================================================================
 
 USE movie_ticket_booking;
 
--- =====================================================================
--- Query 1: All movies and their scheduled showtimes
--- DBMS Concept: INNER JOIN between two related tables
--- Purpose: Retrieves an operational schedule showing when each movie plays.
--- =====================================================================
+-- =============================================================================
+-- QUERY 1: DQL & Multi-Table INNER JOIN with Sorting
+-- Demonstrates: INNER JOIN across 5 tables (bookings, customers, shows, movies, theatres),
+-- filtering confirmed bookings and sorting descending by booking timestamp.
+-- =============================================================================
 SELECT 
-    m.movie_id,
-    m.title AS movie_title,
-    m.language,
-    s.show_id,
-    s.show_date,
-    s.show_time,
-    s.ticket_price,
-    s.available_seats,
-    s.total_seats
-FROM movies m
-INNER JOIN shows s ON m.movie_id = s.movie_id
-ORDER BY s.show_date ASC, s.show_time ASC;
-
-
--- =====================================================================
--- Query 2: All confirmed bookings with customer and movie details
--- DBMS Concept: Multi-table INNER JOIN across 4 normalized entities
--- Purpose: Displays full booking receipts including patron and screening data.
--- =====================================================================
-SELECT 
-    b.booking_id,
+    b.booking_reference,
     c.customer_name,
     c.email,
     m.title AS movie_title,
+    t.name AS theatre_name,
+    t.city,
     s.show_date,
     s.show_time,
+    b.seat_numbers,
     b.number_of_tickets,
     b.total_amount,
-    b.booking_status,
-    b.booking_date
+    b.payment_status
 FROM bookings b
 INNER JOIN customers c ON b.customer_id = c.customer_id
 INNER JOIN shows s ON b.show_id = s.show_id
 INNER JOIN movies m ON s.movie_id = m.movie_id
+INNER JOIN theatres t ON s.theatre_id = t.theatre_id
 WHERE b.booking_status = 'CONFIRMED'
 ORDER BY b.booking_date DESC;
 
 
--- =====================================================================
--- Query 3: Total revenue from confirmed bookings
--- DBMS Concept: Aggregate function (SUM) with conditional filter (WHERE)
--- Purpose: Calculates gross earnings from valid (non-cancelled) reservations.
--- =====================================================================
-SELECT 
-    COUNT(booking_id) AS total_confirmed_bookings,
-    SUM(number_of_tickets) AS total_tickets_sold,
-    COALESCE(SUM(total_amount), 0.00) AS total_gross_revenue
-FROM bookings
-WHERE booking_status = 'CONFIRMED';
-
-
--- =====================================================================
--- Query 4: Total tickets sold per movie
--- DBMS Concept: Multi-table JOIN with GROUP BY and aggregate SUM
--- Purpose: Analyzes ticket sales volume for each movie in the system.
--- =====================================================================
+-- =============================================================================
+-- QUERY 2: Aggregate Functions & GROUP BY with HAVING Clause
+-- Demonstrates: Aggregation (SUM, COUNT, AVG) grouped by movie, filtered using
+-- HAVING to identify blockbuster movies generating more than ₹500 in confirmed revenue.
+-- =============================================================================
 SELECT 
     m.movie_id,
-    m.title AS movie_title,
+    m.title,
     m.genre,
-    COALESCE(SUM(b.number_of_tickets), 0) AS total_tickets_sold
-FROM movies m
-LEFT JOIN shows s ON m.movie_id = s.movie_id
-LEFT JOIN bookings b ON s.show_id = b.show_id AND b.booking_status = 'CONFIRMED'
-GROUP BY m.movie_id, m.title, m.genre
-ORDER BY total_tickets_sold DESC;
-
-
--- =====================================================================
--- Query 5: Movies with no bookings
--- DBMS Concept: LEFT OUTER JOIN with IS NULL filter (Anti-Join pattern)
--- Purpose: Identifies movies that have not generated any bookings yet.
--- =====================================================================
-SELECT 
-    m.movie_id,
-    m.title AS movie_title,
-    m.genre,
-    m.language
-FROM movies m
-LEFT JOIN shows s ON m.movie_id = s.movie_id
-LEFT JOIN bookings b ON s.show_id = b.show_id
-GROUP BY m.movie_id, m.title, m.genre, m.language
-HAVING COUNT(b.booking_id) = 0;
-
-
--- =====================================================================
--- Query 6: Most popular movies ranked by tickets sold
--- DBMS Concept: GROUP BY, ORDER BY, aggregate SUM with ranking
--- Purpose: Produces a box-office popularity leaderboard.
--- =====================================================================
-SELECT 
-    m.movie_id,
-    m.title AS movie_title,
-    COUNT(DISTINCT s.show_id) AS total_scheduled_shows,
-    COALESCE(SUM(b.number_of_tickets), 0) AS tickets_sold,
-    COALESCE(SUM(b.total_amount), 0.00) AS total_revenue
+    COUNT(b.booking_id) AS total_bookings_count,
+    COALESCE(SUM(b.number_of_tickets), 0) AS total_tickets_sold,
+    COALESCE(SUM(b.total_amount), 0.00) AS total_gross_revenue,
+    ROUND(AVG(b.total_amount), 2) AS avg_booking_value
 FROM movies m
 INNER JOIN shows s ON m.movie_id = s.movie_id
-LEFT JOIN bookings b ON s.show_id = b.show_id AND b.booking_status = 'CONFIRMED'
-GROUP BY m.movie_id, m.title
-ORDER BY tickets_sold DESC, total_revenue DESC;
+INNER JOIN bookings b ON s.show_id = b.show_id
+WHERE b.booking_status = 'CONFIRMED'
+GROUP BY m.movie_id, m.title, m.genre
+HAVING total_gross_revenue > 500.00
+ORDER BY total_gross_revenue DESC;
 
 
--- =====================================================================
--- Query 7: Shows with highest available seats
--- DBMS Concept: Selection, Sorting (ORDER BY DESC), and Pagination (LIMIT)
--- Purpose: Identifies shows with greatest surplus inventory for promotional discounts.
--- =====================================================================
+-- =============================================================================
+-- QUERY 3: LEFT OUTER JOIN (Catalog Coverage)
+-- Demonstrates: LEFT JOIN to find all movies including those with zero scheduled shows
+-- or zero bookings (ensures non-matching master rows are preserved).
+-- =============================================================================
 SELECT 
-    s.show_id,
-    m.title AS movie_title,
+    m.movie_id,
+    m.title,
+    m.language,
+    m.release_status,
+    COUNT(s.show_id) AS scheduled_shows_count
+FROM movies m
+LEFT JOIN shows s ON m.movie_id = s.movie_id
+GROUP BY m.movie_id, m.title, m.language, m.release_status
+ORDER BY scheduled_shows_count DESC, m.title ASC;
+
+
+-- =============================================================================
+-- QUERY 4: RIGHT OUTER JOIN (Audit of Theatres vs Active Screenings)
+-- Demonstrates: RIGHT OUTER JOIN to guarantee all registered theatres are evaluated
+-- against upcoming scheduled screenings.
+-- =============================================================================
+SELECT 
+    t.city,
+    t.name AS theatre_name,
     s.show_date,
     s.show_time,
-    s.ticket_price,
-    s.available_seats,
-    s.total_seats,
-    ROUND((s.available_seats / s.total_seats) * 100, 2) AS vacancy_percentage
+    s.ticket_price
 FROM shows s
-INNER JOIN movies m ON s.movie_id = m.movie_id
-ORDER BY s.available_seats DESC
-LIMIT 5;
+RIGHT OUTER JOIN theatres t ON s.theatre_id = t.theatre_id
+ORDER BY t.city ASC, t.name ASC;
 
 
--- =====================================================================
--- Query 8: Daily booking totals
--- DBMS Concept: Date functions with GROUP BY and multiple aggregations
--- Purpose: Tracks business trends, customer traffic, and daily turnover.
--- =====================================================================
+-- =============================================================================
+-- QUERY 5: Correlated Subquery
+-- Demonstrates: Subquery where inner query references outer table row (m.movie_id)
+-- to retrieve movies whose user rating exceeds the average rating of their genre.
+-- =============================================================================
 SELECT 
-    DATE(b.booking_date) AS booking_day,
-    COUNT(b.booking_id) AS total_transactions,
-    SUM(b.number_of_tickets) AS total_tickets_booked,
-    SUM(b.total_amount) AS daily_revenue
-FROM bookings b
-WHERE b.booking_status = 'CONFIRMED'
-GROUP BY DATE(b.booking_date)
-ORDER BY booking_day DESC;
+    m1.movie_id,
+    m1.title,
+    m1.genre,
+    m1.rating
+FROM movies m1
+WHERE m1.rating > (
+    SELECT AVG(m2.rating)
+    FROM movies m2
+    WHERE m2.genre = m1.genre
+)
+ORDER BY m1.rating DESC;
 
 
--- =====================================================================
--- Query 9: Customers with more than one booking
--- DBMS Concept: GROUP BY with HAVING clause for post-aggregation filtering
--- Purpose: Identifies repeat/frequent customers for loyalty rewards.
--- =====================================================================
+-- =============================================================================
+-- QUERY 6: Non-Correlated Subquery with IN Operator
+-- Demonstrates: Finding all customers who have booked an IMAX or 4DX show.
+-- =============================================================================
 SELECT 
     c.customer_id,
     c.customer_name,
-    c.email,
-    COUNT(b.booking_id) AS booking_count,
-    SUM(b.number_of_tickets) AS cumulative_tickets,
-    SUM(b.total_amount) AS cumulative_spent
+    c.email
 FROM customers c
-INNER JOIN bookings b ON c.customer_id = b.customer_id
-GROUP BY c.customer_id, c.customer_name, c.email
-HAVING COUNT(b.booking_id) > 1
-ORDER BY booking_count DESC;
-
-
--- =====================================================================
--- Query 10: Booking history for a particular email
--- DBMS Concept: Parametric lookup using JOIN and indexed column filter
--- Purpose: Powers user self-service portal to see past ticket orders.
--- =====================================================================
-SELECT 
-    b.booking_id,
-    m.title AS movie_title,
-    s.show_date,
-    s.show_time,
-    b.number_of_tickets,
-    b.total_amount,
-    b.booking_status,
-    b.booking_date
-FROM bookings b
-INNER JOIN customers c ON b.customer_id = c.customer_id
-INNER JOIN shows s ON b.show_id = s.show_id
-INNER JOIN movies m ON s.movie_id = m.movie_id
-WHERE c.email = 'rahul@example.com'
-ORDER BY b.booking_date DESC;
-
-
--- =====================================================================
--- Query 11: Average ticket price per movie
--- DBMS Concept: Aggregate AVG function with GROUP BY
--- Purpose: Analyzes pricing dispersion across movie titles.
--- =====================================================================
-SELECT 
-    m.movie_id,
-    m.title AS movie_title,
-    COUNT(s.show_id) AS number_of_shows,
-    ROUND(AVG(s.ticket_price), 2) AS average_ticket_price,
-    MIN(s.ticket_price) AS min_price,
-    MAX(s.ticket_price) AS max_price
-FROM movies m
-INNER JOIN shows s ON m.movie_id = s.movie_id
-GROUP BY m.movie_id, m.title
-ORDER BY average_ticket_price DESC;
-
-
--- =====================================================================
--- Query 12: Movies with shows but no confirmed bookings
--- DBMS Concept: Nested Subquery with NOT IN / NOT EXISTS predicate
--- Purpose: Detects scheduled content that has had zero customer traction.
--- =====================================================================
-SELECT 
-    m.movie_id,
-    m.title AS movie_title,
-    m.genre,
-    m.language
-FROM movies m
-WHERE m.movie_id IN (
-    SELECT DISTINCT s.movie_id 
-    FROM shows s
-) 
-AND m.movie_id NOT IN (
-    SELECT DISTINCT s.movie_id
-    FROM shows s
-    INNER JOIN bookings b ON s.show_id = b.show_id
-    WHERE b.booking_status = 'CONFIRMED'
+WHERE c.customer_id IN (
+    SELECT DISTINCT b.customer_id
+    FROM bookings b
+    JOIN shows s ON b.show_id = s.show_id
+    JOIN screens sc ON s.screen_id = sc.screen_id
+    WHERE sc.screen_type IN ('IMAX Laser', '4DX', 'IMAX')
+      AND b.booking_status = 'CONFIRMED'
 );
 
 
--- =====================================================================
--- Query 13: Min, Max, and Average ticket prices across all active screenings
--- DBMS Concept: Multi-column scalar aggregation across the entire table
--- Purpose: Provides overall price baseline metrics for the theater management.
--- =====================================================================
+-- =============================================================================
+-- QUERY 7: Seat Inventory Breakdown by Tier (REGULAR, PREMIUM, RECLINER)
+-- Demonstrates: Conditional aggregation with CASE statements to analyze
+-- seating composition per theatre screen.
+-- =============================================================================
 SELECT 
-    MIN(ticket_price) AS lowest_ticket_price,
-    MAX(ticket_price) AS highest_ticket_price,
-    ROUND(AVG(ticket_price), 2) AS overall_average_ticket_price,
-    COUNT(show_id) AS total_screenings_scheduled
-FROM shows;
+    t.name AS theatre_name,
+    sc.screen_name,
+    sc.screen_type,
+    COUNT(st.seat_id) AS total_physical_seats,
+    SUM(CASE WHEN st.seat_tier = 'RECLINER' THEN 1 ELSE 0 END) AS recliner_seats_count,
+    SUM(CASE WHEN st.seat_tier = 'PREMIUM' THEN 1 ELSE 0 END) AS premium_seats_count,
+    SUM(CASE WHEN st.seat_tier = 'REGULAR' THEN 1 ELSE 0 END) AS regular_seats_count
+FROM screens sc
+JOIN theatres t ON sc.theatre_id = t.theatre_id
+JOIN seats st ON sc.screen_id = st.screen_id
+GROUP BY t.name, sc.screen_name, sc.screen_type
+ORDER BY t.name, sc.screen_name;
 
 
--- =====================================================================
--- Query 14: Detailed revenue breakdown by movie
--- DBMS Concept: Multi-table outer joins with aggregation, grouping, and ordering
--- Purpose: Provides executive-level reporting of financial performance per title.
--- =====================================================================
+-- =============================================================================
+-- QUERY 8: Real-Time Seat Availability Collision Check
+-- Demonstrates: Checking whether candidate seats for a show are already occupied
+-- using the atomic `booking_seats` table and NOT EXISTS / IN clause.
+-- =============================================================================
 SELECT 
-    m.movie_id,
+    st.seat_number,
+    st.seat_tier,
+    st.price_multiplier,
+    CASE 
+        WHEN bs.booking_seat_id IS NOT NULL AND bs.status = 'CONFIRMED' THEN 'OCCUPIED'
+        ELSE 'AVAILABLE'
+    END AS live_status
+FROM seats st
+JOIN shows s ON s.screen_id = st.screen_id
+LEFT JOIN booking_seats bs 
+    ON bs.seat_id = st.seat_id 
+    AND bs.show_id = s.show_id 
+    AND bs.status = 'CONFIRMED'
+WHERE s.show_id = 1
+ORDER BY st.seat_row ASC, st.seat_col ASC;
+
+
+-- =============================================================================
+-- QUERY 9: Coupon Redemption & Discount Financial Audit
+-- Demonstrates: Financial reconciliation query calculating gross revenue, total
+-- discount deductions, and net settled amount per coupon code.
+-- =============================================================================
+SELECT 
+    COALESCE(b.coupon_code, 'NO_COUPON') AS coupon_applied,
+    COUNT(b.booking_id) AS total_orders,
+    SUM(b.total_amount) AS net_revenue_collected,
+    SUM(b.discount_amount) AS total_discount_given
+FROM bookings b
+WHERE b.booking_status = 'CONFIRMED'
+GROUP BY coupon_applied
+ORDER BY net_revenue_collected DESC;
+
+
+-- =============================================================================
+-- QUERY 10: Multi-Criteria Filter & Pattern Matching (LIKE)
+-- Demonstrates: Text pattern matching with wildcards (LIKE '%...%') and logical
+-- conjunctions (AND, OR) for real-time cinema discovery.
+-- =============================================================================
+SELECT 
+    movie_id,
+    title,
+    genre,
+    language,
+    rating,
+    release_status
+FROM movies
+WHERE (title LIKE '%Dark%' OR description LIKE '%Joker%')
+  AND language = 'English'
+  AND rating >= 4.0;
+
+
+-- =============================================================================
+-- QUERY 11: SQL VIEW Demonstration (booking_details_view)
+-- Demonstrates: Querying a pre-compiled relational VIEW providing abstraction
+-- and encapsulation of complex 6-table joins.
+-- =============================================================================
+SELECT 
+    booking_reference,
+    customer_name,
+    movie_title,
+    theatre_name,
+    city,
+    show_date,
+    show_time,
+    seat_numbers,
+    total_amount,
+    payment_status,
+    booking_status
+FROM booking_details_view
+WHERE booking_status = 'CONFIRMED';
+
+
+-- =============================================================================
+-- QUERY 12: Stored Procedure Execution with Input Parameter
+-- Demonstrates: Invoking database-level stored logic with parameter passing.
+-- =============================================================================
+CALL GetMovieRevenue(1);
+
+
+-- =============================================================================
+-- QUERY 13: Customer Review Sentiment & Star Rating Averages
+-- Demonstrates: AVG and COUNT aggregation on 1-to-many user review relations.
+-- =============================================================================
+SELECT 
     m.title AS movie_title,
-    m.language,
-    COUNT(DISTINCT s.show_id) AS total_shows,
-    COALESCE(SUM(CASE WHEN b.booking_status = 'CONFIRMED' THEN b.number_of_tickets ELSE 0 END), 0) AS confirmed_tickets,
-    COALESCE(SUM(CASE WHEN b.booking_status = 'CONFIRMED' THEN b.total_amount ELSE 0.00 END), 0.00) AS total_revenue
+    ROUND(AVG(r.rating), 1) AS computed_avg_rating,
+    COUNT(r.review_id) AS verified_reviews_count
 FROM movies m
-LEFT JOIN shows s ON m.movie_id = s.movie_id
-LEFT JOIN bookings b ON s.show_id = b.show_id
-GROUP BY m.movie_id, m.title, m.language
-ORDER BY total_revenue DESC;
+LEFT JOIN reviews r ON m.movie_id = r.movie_id
+GROUP BY m.movie_id, m.title
+ORDER BY computed_avg_rating DESC;
+
+
+-- =============================================================================
+-- QUERY 14: User Watchlist & Personalized Recommendations
+-- Demonstrates: Relational mapping between registered users and bookmarked movies.
+-- =============================================================================
+SELECT 
+    u.name AS user_name,
+    u.email,
+    m.title AS watchlisted_movie,
+    m.genre,
+    m.rating,
+    w.added_at
+FROM watchlist w
+JOIN users u ON w.user_id = u.user_id
+JOIN movies m ON w.movie_id = m.movie_id
+ORDER BY u.name ASC, w.added_at DESC;
+
+
+-- =============================================================================
+-- QUERY 15: ACID Transaction Engine (Complete Booking with Row Locking)
+-- Demonstrates: 
+--   - START TRANSACTION
+--   - Pessimistic Row Locking (FOR UPDATE)
+--   - Atomic seat status insertion in booking_seats
+--   - Payment record creation
+--   - Decrementing available seats
+--   - COMMIT
+-- =============================================================================
+START TRANSACTION;
+
+-- 1. Lock the candidate show row to prevent race conditions
+SELECT show_id, available_seats, ticket_price 
+FROM shows 
+WHERE show_id = 1 
+FOR UPDATE;
+
+-- 2. Verify selected seats are not already occupied for this show
+SELECT seat_id, seat_number 
+FROM booking_seats 
+WHERE show_id = 1 
+  AND seat_id IN (1, 2) 
+  AND status = 'CONFIRMED'
+FOR UPDATE;
+
+-- (If 0 rows returned above, proceed with booking):
+-- 3. Insert Master Booking
+INSERT INTO bookings (customer_id, user_id, show_id, booking_reference, number_of_tickets, seat_numbers, total_amount, convenience_fee, discount_amount, coupon_code, booking_status, payment_status)
+VALUES (1, 2, 1, 'BK-TRANS-TEST', 2, 'A1, A2', 750.00, 30.00, 0.00, NULL, 'CONFIRMED', 'PAID');
+
+SET @new_booking_id = LAST_INSERT_ID();
+
+-- 4. Atomically insert individual seat reservations
+INSERT INTO booking_seats (booking_id, show_id, seat_id, seat_number, seat_tier, seat_price, status)
+VALUES 
+(@new_booking_id, 1, 1, 'A1', 'RECLINER', 375.00, 'CONFIRMED'),
+(@new_booking_id, 1, 2, 'A2', 'RECLINER', 375.00, 'CONFIRMED');
+
+-- 5. Record verified payment
+INSERT INTO payments (booking_id, user_id, amount, payment_method, transaction_id, payment_status)
+VALUES (@new_booking_id, 2, 750.00, 'RAZORPAY_TEST', 'TXN-TRANS-TEST-01', 'SUCCESS');
+
+-- 6. Decrement available seats in show
+UPDATE shows 
+SET available_seats = available_seats - 2 
+WHERE show_id = 1;
+
+-- Commit the transaction atomically
+COMMIT;
+
+
+-- =============================================================================
+-- QUERY 16: ACID Transaction Engine (Cancellation, Seat Release & Refund)
+-- Demonstrates: 
+--   - Rollback capability
+--   - Updating booking status
+--   - Releasing seats in booking_seats
+--   - Restoring seat count in shows
+--   - Logging refund audit entry
+-- =============================================================================
+START TRANSACTION;
+
+-- 1. Lock the booking to be cancelled
+SELECT booking_id, show_id, number_of_tickets, total_amount, booking_status 
+FROM bookings 
+WHERE booking_reference = 'BK-TRANS-TEST' AND booking_status = 'CONFIRMED'
+FOR UPDATE;
+
+-- 2. Update booking status
+UPDATE bookings 
+SET booking_status = 'CANCELLED', payment_status = 'REFUNDED' 
+WHERE booking_reference = 'BK-TRANS-TEST';
+
+-- 3. Release occupied seats
+UPDATE booking_seats 
+SET status = 'RELEASED' 
+WHERE booking_id = @new_booking_id;
+
+-- 4. Restore available seats on the show
+UPDATE shows 
+SET available_seats = available_seats + 2 
+WHERE show_id = 1;
+
+-- 5. Record refund audit
+INSERT INTO refunds (booking_id, refund_amount, refund_reason, refund_status)
+VALUES (@new_booking_id, 750.00, 'Customer requested voluntary cancellation', 'PROCESSED');
+
+-- Commit atomic cancellation
+COMMIT;

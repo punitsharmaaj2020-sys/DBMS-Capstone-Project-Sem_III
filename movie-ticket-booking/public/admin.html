@@ -185,6 +185,9 @@
         <button type="button" class="admin-tab-btn" id="tabBookingsBtn" data-tab="tabBookingsPane" role="tab" aria-selected="false">
           📋 All Bookings
         </button>
+        <button type="button" class="admin-tab-btn" id="tabPopularBtn" data-tab="tabPopularPane" role="tab" aria-selected="false">
+          🔥 Most Popular Movies
+        </button>
       </div>
 
       <!-- ==================================================================
@@ -395,6 +398,39 @@
         </div>
 
       </div>
+
+      <!-- ==================================================================
+           TAB 4: MOST POPULAR MOVIES (DBMS ANALYTICS)
+           ================================================================== -->
+      <div id="tabPopularPane" class="admin-tab-pane" role="tabpanel">
+        <div class="admin-card">
+          <div class="admin-card-header">
+            <div>
+              <h3 class="admin-card-title">🔥 Most Popular Movies (DBMS Query 6)</h3>
+              <span class="text-muted" style="font-size: 0.85rem;">Ranked dynamically using MySQL GROUP BY &amp; Aggregates (SUM of tickets sold &amp; gross revenue)</span>
+            </div>
+            <span class="badge badge-info" id="popularMoviesCount">Top Screenings</span>
+          </div>
+
+          <div class="admin-table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th style="width: 70px;">Rank</th>
+                  <th>Movie Title</th>
+                  <th>Genre</th>
+                  <th>Shows Scheduled</th>
+                  <th>Tickets Sold</th>
+                  <th>Total Revenue</th>
+                </tr>
+              </thead>
+              <tbody id="popularMoviesTableBody">
+                <!-- Dynamically populated via js/admin.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ====================================================================
@@ -517,6 +553,7 @@
   </script>
 
   <!-- Admin JavaScript Management -->
-  <script src="js/admin.js"></script>
+  <script src="js/profile.js"></script>
+ <script src="js/admin.js"></script>
 </body>
 </html>

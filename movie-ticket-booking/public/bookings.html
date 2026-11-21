@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="View, manage, and cancel your movie ticket bookings with MovieBook. Enter your email to view all your reservations.">
-  <title>My Bookings - MovieBook</title>
+  <meta name="description" content="View, manage, and cancel your movie ticket bookings with CinePass. Real-time MySQL booking history & digital ticket generation.">
+  <title>My Bookings &amp; Watchlist - CinePass</title>
 
-  <!-- Google Fonts: Poppins (300, 400, 500, 600, 700) -->
+  <!-- Google Fonts: Poppins (300, 400, 500, 600, 700, 800) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
@@ -19,13 +19,14 @@
   <!-- Navigation Bar -->
   <nav class="navbar" id="mainNavbar">
     <div class="container navbar-inner">
-      <a href="index.html" class="nav-brand" aria-label="MovieBook Home">
+      <a href="index.html" class="nav-brand" aria-label="CinePass Home">
         <span class="brand-icon">🎬</span>
-        <span>Movie<span class="brand-accent">Book</span></span>
+        <span>Cine<span class="brand-accent">Pass</span></span>
+        <span style="font-size: 0.68rem; font-weight: 700; background: var(--accent-red); color: #fff; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">PRIME</span>
       </a>
 
       <!-- Mobile Hamburger Button -->
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation Menu">
         <span></span>
         <span></span>
         <span></span>
@@ -40,7 +41,13 @@
           <a href="index.html#movies" class="nav-link">Movies</a>
         </li>
         <li class="nav-item">
+          <a href="index.html#theatres" class="nav-link">Theatres</a>
+        </li>
+        <li class="nav-item">
           <a href="bookings.html" class="nav-link active">My Bookings</a>
+        </li>
+        <li class="nav-item">
+          <a href="bookings.html?tab=watchlist" class="nav-link" id="navWatchlistLink">Watchlist</a>
         </li>
         <li class="nav-item">
           <a href="admin.html" class="nav-link">Admin</a>
@@ -53,142 +60,199 @@
   <main class="section-padding">
     <div class="container">
       
-      <!-- Page Header & Search Banner -->
-      <section class="bookings-search-section">
-        <div class="bookings-search-card">
-          <div style="font-size: 2.5rem; margin-bottom: 12px;">🎟️</div>
-          <h1 class="hero-title" style="font-size: 2.2rem; margin-bottom: 8px;">My Ticket <span>Bookings</span></h1>
-          <p class="section-subtitle" style="margin-bottom: 24px;">Enter your registered email address to view, verify, or cancel your reservations.</p>
-
-          <!-- Email Search Form -->
-          <form id="bookingSearchForm" novalidate>
-            <div class="search-bar-wrapper" style="border-radius: var(--radius-btn);">
-              <span class="search-icon" aria-hidden="true">✉️</span>
-              <input 
-                type="email" 
-                id="searchEmail" 
-                class="search-input" 
-                placeholder="Enter your booking email (e.g. john@example.com)" 
-                required
-              >
-              <button type="submit" id="searchBtn" class="btn btn-primary btn-sm">
-                Search Bookings
-              </button>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      <!-- Global Alert Container -->
-      <div id="bookingsAlert" class="alert hidden" role="alert"></div>
-
-      <!-- Loading Spinner -->
-      <div id="bookingsLoading" class="loading-container hidden">
-        <div class="spinner"></div>
-        <p>Retrieving your ticket reservations...</p>
+      <!-- Page Navigation Tabs (My Bookings vs Watchlist) -->
+      <div class="category-tabs" style="margin-bottom: 30px;">
+        <button class="category-tab-btn active" id="tabBookingsBtn">🎟️ My Bookings</button>
+        <button class="category-tab-btn" id="tabWatchlistBtn">❤️ My Watchlist</button>
       </div>
 
-      <!-- Bookings Results Section (Hidden until search is performed) -->
-      <section id="bookingsResults" class="hidden">
-        <!-- Results Header -->
-        <div class="section-header" style="margin-top: 20px;">
-          <div>
-            <h2 class="section-title">Your Reservations</h2>
-            <p id="resultsSummaryText" class="section-subtitle">Showing bookings for your email</p>
+      <!-- SECTION 1: BOOKINGS TAB -->
+      <div id="bookingsTabContainer">
+        <!-- Search Card -->
+        <section class="bookings-search-section">
+          <div class="bookings-search-card">
+            <h1 class="hero-title" style="font-size: 2.2rem; margin-bottom: 8px;">My Cinema <span>Reservations</span></h1>
+            <p class="section-subtitle" style="margin-bottom: 24px;">Enter your email to retrieve your booking history, print digital tickets, or request cancellations.</p>
+
+            <form id="bookingSearchForm" novalidate>
+              <div class="search-bar-wrapper" style="border-radius: var(--radius-btn);">
+                <span class="search-icon" aria-hidden="true">✉️</span>
+                <input 
+                  type="email" 
+                  id="searchEmail" 
+                  class="search-input" 
+                  placeholder="Enter your booking email (e.g. akshat@example.com)" 
+                  required
+                >
+                <button type="submit" id="searchBtn" class="btn btn-primary btn-sm">
+                  Search Bookings
+                </button>
+              </div>
+            </form>
           </div>
+        </section>
+
+        <!-- Global Alert Container -->
+        <div id="bookingsAlert" class="alert hidden" role="alert" style="margin-top: 20px;"></div>
+
+        <!-- Loading Spinner -->
+        <div id="bookingsLoading" class="loading-container hidden">
+          <div class="spinner"></div>
+          <p>Retrieving your ticket reservations from MySQL...</p>
         </div>
 
-        <!-- Bookings Container (Cards / Responsive Table) -->
-        <div id="bookingsContainer">
-          <!-- Populated dynamically via js/bookings.js -->
-        </div>
-
-        <!-- Empty State (No bookings found) -->
-        <div id="noBookingsState" class="empty-state hidden">
-          <div class="empty-state-icon">📋</div>
-          <h3>No Bookings Found</h3>
-          <p>We couldn't find any active or past reservations under this email address. Please make sure the email matches the one you entered when booking.</p>
-          <a href="index.html#movies" class="btn btn-primary">Browse Now Showing Movies</a>
-        </div>
-      </section>
-
-      <!-- Cancel Confirmation Modal -->
-      <div id="cancelModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="cancelModalTitle">
-        <div class="modal-card">
-          <button type="button" class="modal-close-btn" id="cancelModalCloseBtn" aria-label="Close Cancel Modal">&times;</button>
-          
-          <div class="modal-header">
-            <h3 class="modal-title" id="cancelModalTitle" style="color: #ff5252;">Cancel Reservation</h3>
-          </div>
-
-          <div class="modal-body">
-            <p style="color: var(--text-secondary); margin-bottom: 18px;">
-              Are you sure you want to cancel this booking? This action cannot be undone and your reserved seats will be released.
-            </p>
-
-            <div class="price-calculation-card">
-              <div class="price-row">
-                <span class="text-muted">Booking Reference:</span>
-                <strong id="modalCancelBookingId" style="color: var(--accent-red);">#BK---</strong>
-              </div>
-              <div class="price-row">
-                <span class="text-muted">Movie:</span>
-                <span id="modalCancelMovieTitle" style="font-weight: 600;">--</span>
-              </div>
-              <div class="price-row">
-                <span class="text-muted">Showtime:</span>
-                <span id="modalCancelShowTime">--</span>
-              </div>
-              <div class="price-row">
-                <span class="text-muted">Tickets to Cancel:</span>
-                <span id="modalCancelTickets">--</span>
-              </div>
+        <!-- Bookings Results Section -->
+        <section id="bookingsResults" class="hidden">
+          <div class="section-header" style="margin-top: 20px;">
+            <div>
+              <h2 class="section-title">Your Reservations</h2>
+              <p id="resultsSummaryText" class="section-subtitle">Showing confirmed and cancelled bookings</p>
             </div>
           </div>
 
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" id="dismissCancelBtn">
-              Keep Booking
-            </button>
-            <button type="button" class="btn btn-danger" id="confirmCancelBtn">
-              Yes, Cancel Booking
-            </button>
+          <div id="bookingsList" class="bookings-list">
+            <!-- Dynamically populated via js/bookings.js -->
           </div>
+
+          <!-- Empty Bookings State -->
+          <div id="noBookingsFound" class="empty-state hidden">
+            <div class="empty-state-icon">🎟️</div>
+            <h3>No Bookings Found</h3>
+            <p>We couldn't find any reservations associated with this email address.</p>
+            <a href="index.html#movies" class="btn btn-secondary">Explore Movies &amp; Book Tickets</a>
+          </div>
+        </section>
+      </div>
+
+      <!-- SECTION 2: WATCHLIST TAB (Hidden by default) -->
+      <div id="watchlistTabContainer" class="hidden">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Your Movie Watchlist</h2>
+            <p class="section-subtitle">Movies you saved to watch later on the big screen</p>
+          </div>
+        </div>
+
+        <div id="watchlistGrid" class="movies-grid">
+          <!-- Dynamically populated via js/bookings.js -->
+        </div>
+
+        <div id="noWatchlistFound" class="empty-state hidden">
+          <div class="empty-state-icon">❤️</div>
+          <h3>Your Watchlist is Empty</h3>
+          <p>Explore now showing blockbusters and click "+ Add to Watchlist" to save them here!</p>
+          <a href="index.html#movies" class="btn btn-secondary">Discover Movies</a>
         </div>
       </div>
 
     </div>
   </main>
 
+  <!-- Digital Ticket Modal (For viewing & re-downloading) -->
+  <div id="ticketModal" class="modal-overlay" role="dialog" aria-modal="true" style="display: none;">
+    <div class="ticket-wrapper">
+      <div class="digital-ticket-card">
+        <div class="ticket-header">
+          <div>
+            <div class="ticket-header-brand">🎬 CINEPASS PRIME</div>
+            <div style="font-size: 0.8rem; opacity: 0.9;">OFFICIAL CINEMA TICKET</div>
+          </div>
+          <div class="ticket-header-ref" id="ticketRefCode">#BK-000000</div>
+        </div>
+
+        <div class="ticket-body">
+          <img id="ticketPosterImg" src="" alt="Movie Poster" class="ticket-poster-img">
+          
+          <div class="ticket-info-grid">
+            <div class="ticket-info-item" style="grid-column: 1 / -1;">
+              <span class="ticket-info-label">Movie</span>
+              <span class="ticket-info-val" id="ticketMovieTitle" style="font-size: 1.25rem;">Movie Title</span>
+            </div>
+            
+            <div class="ticket-info-item">
+              <span class="ticket-info-label">Cinema Theatre</span>
+              <span class="ticket-info-val" id="ticketTheatreName">PVR ICON</span>
+            </div>
+
+            <div class="ticket-info-item">
+              <span class="ticket-info-label">Screen</span>
+              <span class="ticket-info-val" id="ticketScreenName">Audi 1 - IMAX</span>
+            </div>
+
+            <div class="ticket-info-item">
+              <span class="ticket-info-label">Date</span>
+              <span class="ticket-info-val" id="ticketShowDate">2026-11-17</span>
+            </div>
+
+            <div class="ticket-info-item">
+              <span class="ticket-info-label">Time</span>
+              <span class="ticket-info-val" id="ticketShowTime">18:45 PM</span>
+            </div>
+
+            <div class="ticket-seats-highlight">
+              <span class="ticket-info-label" style="color: var(--accent-red); font-weight: 700;">RESERVED SEATS</span>
+              <div style="font-size: 1.3rem; font-weight: 800; color: #fff;" id="ticketSeatsList">A1, A2</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ticket-perforation">
+          <div class="ticket-notch-left"></div>
+          <div class="ticket-perforation-line"></div>
+          <div class="ticket-notch-right"></div>
+        </div>
+
+        <div class="ticket-footer">
+          <div class="ticket-qr-wrap">
+            <div class="ticket-qr-svg">
+              <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <rect x="0" y="0" width="30" height="30" fill="#000"/>
+                <rect x="5" y="5" width="20" height="20" fill="#fff"/>
+                <rect x="10" y="10" width="10" height="10" fill="#000"/>
+                <rect x="70" y="0" width="30" height="30" fill="#000"/>
+                <rect x="75" y="5" width="20" height="20" fill="#fff"/>
+                <rect x="80" y="10" width="10" height="10" fill="#000"/>
+                <rect x="0" y="70" width="30" height="30" fill="#000"/>
+                <rect x="5" y="75" width="20" height="20" fill="#fff"/>
+                <rect x="10" y="80" width="10" height="10" fill="#000"/>
+                <circle cx="50" cy="50" r="10" fill="#e50914"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">Booked By</div>
+              <div style="font-size: 0.95rem; font-weight: 600; color: #fff;" id="ticketCustomerName">Customer</div>
+              <div style="font-size: 0.8rem; color: #00e676; font-weight: 700;" id="ticketStatusBadge">CONFIRMED &amp; PAID</div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); text-align: right;">Total Amount</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #fff; text-align: right;" id="ticketTotalAmount">₹0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; gap: 14px; margin-top: 20px; justify-content: center;">
+        <button type="button" class="btn btn-primary" onclick="window.print()">
+          <span>🖨️ Print / Save Ticket (PDF)</span>
+        </button>
+        <button type="button" class="btn btn-secondary" id="closeTicketModalBtn">
+          <span>Close</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="footer">
     <div class="container footer-content">
-      <div class="footer-brand">🎬 MovieBook</div>
-      <p>Movie Ticket Booking System &copy; 2026. Designed with passion for cinema lovers.</p>
-      <ul class="footer-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="index.html#movies">Movies</a></li>
-        <li><a href="bookings.html">My Bookings</a></li>
-        <li><a href="admin.html">Admin Panel</a></li>
-      </ul>
+      <div class="footer-brand">🎬 CinePass Prime</div>
+      <p>Movie Ticket Booking System &copy; 2026. DBMS Capstone Project.</p>
     </div>
   </footer>
 
-  <!-- Mobile Nav Script Helper -->
-  <script>
-    const navToggle = document.getElementById('navToggle');
-    const navLinks = document.getElementById('navLinks');
-    if (navToggle && navLinks) {
-      navToggle.addEventListener('click', () => {
-        navToggle.classList.toggle('active');
-        navLinks.classList.toggle('active');
-        const expanded = navToggle.getAttribute('aria-expanded') === 'true' || false;
-        navToggle.setAttribute('aria-expanded', !expanded);
-      });
-    }
-  </script>
-
-  <!-- Bookings Management JavaScript -->
-  <script src="js/bookings.js"></script>
+  <!-- Page Script -->
+  <script src="js/profile.js"></script>
+ <script src="js/bookings.js"></script>
 </body>
 </html>

@@ -1,11 +1,16 @@
 /**
- * Movie Ticket Booking System - My Bookings JavaScript
- * Handles searching reservations by customer email, displaying booking records,
- * formatting timestamps and currency, and managing ticket cancellations.
+ * CinePass Premium - My Bookings & Watchlist Manager
+ * Powers:
+ * - Reservation lookup by customer email
+ * - Detailed booking cards with seat information
+ * - Digital ticket viewing & PDF printing modal
+ * - Safe booking cancellation & seat restoration
+ * - Personal movie watchlist (syncs with MySQL & local storage)
+ * - Dynamic tab navigation (?tab=watchlist support)
  */
 
 document.addEventListener('DOMContentLoaded', () => {
-    // DOM Elements
+    // DOM Elements - Bookings
     const searchForm = document.getElementById('bookingSearchForm');
     const emailInput = document.getElementById('searchEmail');
     const searchBtn = document.getElementById('searchBtn');
@@ -13,39 +18,90 @@ document.addEventListener('DOMContentLoaded', () => {
     const loadingEl = document.getElementById('bookingsLoading');
     const resultsSection = document.getElementById('bookingsResults');
     const resultsSummary = document.getElementById('resultsSummaryText');
-    const bookingsContainer = document.getElementById('bookingsContainer');
-    const emptyStateEl = document.getElementById('noBookingsState');
+    const bookingsList = document.getElementById('bookingsList');
+    const noBookingsEl = document.getElementById('noBookingsFound');
 
-    // Cancel Modal Elements
-    const cancelModal = document.getElementById('cancelModal');
-    const cancelModalCloseBtn = document.getElementById('cancelModalCloseBtn');
-    const dismissCancelBtn = document.getElementById('dismissCancelBtn');
-    const confirmCancelBtn = document.getElementById('confirmCancelBtn');
-    const modalCancelBookingId = document.getElementById('modalCancelBookingId');
-    const modalCancelMovieTitle = document.getElementById('modalCancelMovieTitle');
-    const modalCancelShowTime = document.getElementById('modalCancelShowTime');
-    const modalCancelTickets = document.getElementById('modalCancelTickets');
+    // DOM Elements - Tabs
+    const tabBookingsBtn = document.getElementById('tabBookingsBtn');
+    const tabWatchlistBtn = document.getElementById('tabWatchlistBtn');
+    const bookingsTabContainer = document.getElementById('bookingsTabContainer');
+    const watchlistTabContainer = document.getElementById('watchlistTabContainer');
 
-    let currentEmail = '';
-    let pendingCancelId = null;
+    // DOM Elements - Watchlist
+    const watchlistGrid = document.getElementById('watchlistGrid');
+    const noWatchlistFound = document.getElementById('noWatchlistFound');
 
-    // Check if email was provided in URL query parameters (e.g. ?email=user@example.com)
-    const urlParams = new URLSearchParams(window.location.search);
-    const emailParam = urlParams.get('email');
-    if (emailParam) {
-        if (emailInput) emailInput.value = emailParam.trim();
-        searchBookings(emailParam.trim());
+    // DOM Elements - Ticket Modal
+    const ticketModal = document.getElementById('ticketModal');
+    const closeTicketModalBtn = document.getElementById('closeTicketModalBtn');
+
+    // Mobile Navigation Toggle
+    const navToggle = document.getElementById('navToggle');
+    const navLinks = document.getElementById('navLinks');
+    if (navToggle && navLinks) {
+        navToggle.addEventListener('click', () => {
+            navToggle.classList.toggle('active');
+            navLinks.classList.toggle('active');
+        });
     }
 
-    // Search form submission handler
+    let currentEmail = '';
+    const userToken = localStorage.getItem('cinepass_token');
+    const userJson = localStorage.getItem('cinepass_user');
+
+    // Tab Switching Logic
+    if (tabBookingsBtn && tabWatchlistBtn) {
+        tabBookingsBtn.addEventListener('click', () => switchTab('bookings'));
+        tabWatchlistBtn.addEventListener('click', () => switchTab('watchlist'));
+    }
+
+    function switchTab(tabName) {
+        if (tabName === 'watchlist') {
+            tabBookingsBtn.classList.remove('active');
+            tabWatchlistBtn.classList.add('active');
+            if (bookingsTabContainer) bookingsTabContainer.classList.add('hidden');
+            if (watchlistTabContainer) watchlistTabContainer.classList.remove('hidden');
+            loadWatchlist();
+        } else {
+            tabWatchlistBtn.classList.remove('active');
+            tabBookingsBtn.classList.add('active');
+            if (watchlistTabContainer) watchlistTabContainer.classList.add('hidden');
+            if (bookingsTabContainer) bookingsTabContainer.classList.remove('hidden');
+        }
+    }
+
+    // Check URL parameters (e.g. ?tab=watchlist or ?email=...)
+    const urlParams = new URLSearchParams(window.location.search);
+    const tabParam = urlParams.get('tab');
+    const emailParam = urlParams.get('email');
+
+    if (tabParam === 'watchlist') {
+        switchTab('watchlist');
+    } else {
+        // Prefill email if provided in URL or if user is logged in
+        if (emailParam) {
+            if (emailInput) emailInput.value = emailParam.trim();
+            searchBookings(emailParam.trim());
+        } else if (userJson) {
+            try {
+                const u = JSON.parse(userJson);
+                if (u.email && emailInput) {
+                    emailInput.value = u.email;
+                    searchBookings(u.email);
+                }
+            } catch (e) {}
+        }
+    }
+
+    // Search form submission
     if (searchForm) {
         searchForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = (emailInput ? emailInput.value : '').trim();
-
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
             if (!email || !emailRegex.test(email)) {
-                showAlert('Please enter a valid email address.', 'error');
+                showAlert('Please enter a valid email address (e.g., akshat@example.com).', 'error');
                 if (emailInput) emailInput.focus();
                 return;
             }
@@ -54,28 +110,25 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    /**
-     * Fetch bookings from GET /api/bookings?email=...
-     */
+    // ==========================================================================
+    // 1. Fetch & Render Bookings
+    // ==========================================================================
     async function searchBookings(email) {
         currentEmail = email;
         hideAlert();
         showLoading(true);
 
         if (resultsSection) resultsSection.classList.remove('hidden');
-        if (emptyStateEl) {
-            emptyStateEl.classList.add('hidden');
-            emptyStateEl.style.display = 'none';
-        }
-        if (bookingsContainer) bookingsContainer.innerHTML = '';
+        if (noBookingsEl) noBookingsEl.classList.add('hidden');
+        if (bookingsList) bookingsList.innerHTML = '';
 
         try {
-            const response = await fetch(`/api/bookings?email=${encodeURIComponent(email)}`);
-            const data = await response.json();
+            const res = await fetch(`/api/bookings?email=${encodeURIComponent(email)}`);
+            const data = await res.json();
 
             showLoading(false);
 
-            if (!response.ok || !data.success) {
+            if (!res.ok || !data.success) {
                 throw new Error(data.message || 'Failed to retrieve bookings.');
             }
 
@@ -86,217 +139,332 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error fetching bookings:', error);
             showLoading(false);
             showAlert(error.message || 'An error occurred while fetching your bookings.', 'error');
-            if (emptyStateEl) emptyStateEl.style.display = 'none';
         }
     }
 
-    /**
-     * Render bookings list / cards
-     */
     function renderBookings(bookings) {
-        if (!bookingsContainer) return;
-
-        bookingsContainer.innerHTML = '';
+        if (!bookingsList) return;
+        bookingsList.innerHTML = '';
 
         if (!bookings || bookings.length === 0) {
-            if (emptyStateEl) {
-                emptyStateEl.classList.remove('hidden');
-                emptyStateEl.style.display = 'block';
-            }
+            if (noBookingsEl) noBookingsEl.classList.remove('hidden');
             if (resultsSummary) {
-                resultsSummary.textContent = `No reservations found for ${currentEmail}`;
+                resultsSummary.textContent = `No reservations found for ${escapeHtml(currentEmail)}`;
             }
             return;
         }
 
-        if (emptyStateEl) {
-            emptyStateEl.classList.add('hidden');
-            emptyStateEl.style.display = 'none';
-        }
-
+        if (noBookingsEl) noBookingsEl.classList.add('hidden');
         if (resultsSummary) {
-            resultsSummary.textContent = `Found ${bookings.length} reservation${bookings.length > 1 ? 's' : ''} for ${currentEmail}`;
+            resultsSummary.textContent = `Found ${bookings.length} reservation${bookings.length > 1 ? 's' : ''} for ${escapeHtml(currentEmail)}`;
         }
-
-        // Create cards grid
-        const listWrapper = document.createElement('div');
-        listWrapper.className = 'bookings-list';
 
         bookings.forEach(b => {
             const card = document.createElement('div');
-            card.className = 'booking-card';
+            card.className = 'booking-item-card';
 
-            const bookingId = b.booking_id || b.id;
+            const bookingId = b.booking_id;
+            const refCode = b.booking_reference || `BK-${String(bookingId).padStart(6, '0')}`;
             const isConfirmed = (b.booking_status || 'CONFIRMED').toUpperCase() === 'CONFIRMED';
-            const statusClass = isConfirmed ? 'status-confirmed' : 'status-cancelled';
-            const statusText = isConfirmed ? 'CONFIRMED' : 'CANCELLED';
+            const statusClass = isConfirmed ? 'confirmed' : 'cancelled';
+            const statusText = isConfirmed ? 'CONFIRMED &amp; PAID' : 'CANCELLED &amp; REFUNDED';
 
             const showDate = formatDate(b.show_date);
             const showTime = formatTime(b.show_time);
             const bookingDate = formatDateTime(b.booking_date);
-            const totalFormatted = formatCurrency(b.total_amount);
+            const totalFormatted = `₹${parseFloat(b.total_amount).toFixed(2)}`;
+            const seatList = b.seat_numbers || `${b.number_of_tickets} Seat(s)`;
 
             card.innerHTML = `
-                <div class="booking-card-header">
+                <div class="booking-item-header">
                     <div>
-                        <span class="booking-id-tag">#BK${bookingId}</span>
-                        <h3 class="booking-movie-title">${escapeHtml(b.movie_title || currentMovieTitle(b) || 'Cinema Ticket')}</h3>
+                        <span class="booking-id-tag">#${escapeHtml(refCode)}</span>
+                        <h3 style="font-size: 1.3rem; font-weight: 700; color: #fff; margin-top: 4px;">
+                            ${escapeHtml(b.movie_title || 'Movie Title')}
+                        </h3>
                     </div>
-                    <span class="badge ${statusClass}">${statusText}</span>
+                    <span class="status-badge ${statusClass}">
+                        ${isConfirmed ? '✓' : '✗'} ${statusText}
+                    </span>
                 </div>
 
-                <div class="booking-card-body">
-                    <div class="booking-info-item">
-                        <span class="info-label">Show Date &amp; Time</span>
-                        <span class="info-value">📅 ${showDate} at ${showTime}</span>
+                <div class="booking-item-details">
+                    <div class="detail-block">
+                        <label>Cinema &amp; Screen</label>
+                        <span>${escapeHtml(b.theatre_name || 'CinePass Grand')}${b.screen_name ? ` (${escapeHtml(b.screen_name)})` : ''}</span>
                     </div>
-                    <div class="booking-info-item">
-                        <span class="info-label">Tickets</span>
-                        <span class="info-value">🎟️ ${b.number_of_tickets} Seat${b.number_of_tickets > 1 ? 's' : ''}</span>
+                    <div class="detail-block">
+                        <label>Show Date &amp; Time</label>
+                        <span>📅 ${showDate} at ${showTime}</span>
                     </div>
-                    <div class="booking-info-item">
-                        <span class="info-label">Total Amount</span>
-                        <span class="info-value price-highlight">${totalFormatted}</span>
+                    <div class="detail-block">
+                        <label>Reserved Seats</label>
+                        <span style="color: var(--accent-red); font-weight: 700;">🪑 ${escapeHtml(seatList)}</span>
                     </div>
-                    <div class="booking-info-item">
-                        <span class="info-label">Booked On</span>
-                        <span class="info-value text-muted">${bookingDate}</span>
+                    <div class="detail-block">
+                        <label>Total Amount</label>
+                        <span style="font-size: 1.15rem; font-weight: 700; color: #00e676;">${totalFormatted}</span>
+                    </div>
+                    <div class="detail-block">
+                        <label>Customer Name</label>
+                        <span>👤 ${escapeHtml(b.customer_name || 'Customer')}</span>
+                    </div>
+                    <div class="detail-block">
+                        <label>Booked On</label>
+                        <span style="color: var(--text-muted); font-size: 0.88rem;">${bookingDate}</span>
                     </div>
                 </div>
 
-                ${isConfirmed ? `
-                <div class="booking-card-footer">
-                    <button type="button" class="btn btn-outline-danger btn-sm cancel-booking-btn" data-id="${bookingId}">
-                        Cancel Booking
-                    </button>
+                <div class="booking-item-footer">
+                    <div style="font-size: 0.85rem; color: var(--text-muted);">
+                        ${b.transaction_id ? `Txn ID: <code>${escapeHtml(b.transaction_id)}</code>` : ''}
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button type="button" class="btn btn-primary btn-sm view-ticket-btn" data-id="${bookingId}">
+                            <span>🖨️ View &amp; Print E-Ticket</span>
+                        </button>
+                        ${isConfirmed ? `
+                        <button type="button" class="btn btn-outline-danger btn-sm cancel-btn" data-id="${bookingId}" style="border: 1px solid #ff4757; color: #ff4757; background: transparent; padding: 6px 14px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 600;">
+                            <span>Cancel Booking</span>
+                        </button>
+                        ` : ''}
+                    </div>
                 </div>
-                ` : `
-                <div class="booking-card-footer">
-                    <span class="text-muted" style="font-size: 0.85rem;">This booking was cancelled and seats have been restored.</span>
-                </div>
-                `}
             `;
 
-            // Setup cancel action
-            if (isConfirmed) {
-                const cancelBtn = card.querySelector('.cancel-booking-btn');
-                if (cancelBtn) {
-                    cancelBtn.addEventListener('click', () => {
-                        promptCancelBooking(b);
-                    });
-                }
+            // Bind View Ticket Button
+            const viewTicketBtn = card.querySelector('.view-ticket-btn');
+            if (viewTicketBtn) {
+                viewTicketBtn.addEventListener('click', () => openTicketModal(b));
             }
 
-            listWrapper.appendChild(card);
-        });
-
-        bookingsContainer.appendChild(listWrapper);
-    }
-
-    /**
-     * Show confirmation prompt before cancellation
-     */
-    function promptCancelBooking(booking) {
-        pendingCancelId = booking.booking_id || booking.id;
-
-        if (cancelModal) {
-            if (modalCancelBookingId) modalCancelBookingId.textContent = `#BK${pendingCancelId}`;
-            if (modalCancelMovieTitle) modalCancelMovieTitle.textContent = booking.movie_title || 'Movie';
-            if (modalCancelShowTime) modalCancelShowTime.textContent = `${formatDate(booking.show_date)} at ${formatTime(booking.show_time)}`;
-            if (modalCancelTickets) modalCancelTickets.textContent = `${booking.number_of_tickets} Ticket(s)`;
-
-            cancelModal.classList.add('active');
-            cancelModal.style.display = 'flex';
-        } else {
-            // Fallback native confirm dialog
-            const confirmed = window.confirm('Are you sure you want to cancel this booking? This cannot be undone.');
-            if (confirmed) {
-                executeCancelBooking(pendingCancelId);
+            // Bind Cancel Button
+            const cancelBtn = card.querySelector('.cancel-btn');
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', () => handleCancellation(b));
             }
-        }
-    }
 
-    // Modal Close and Dismiss Handlers
-    if (cancelModalCloseBtn) {
-        cancelModalCloseBtn.addEventListener('click', closeCancelModal);
-    }
-    if (dismissCancelBtn) {
-        dismissCancelBtn.addEventListener('click', closeCancelModal);
-    }
-    if (cancelModal) {
-        cancelModal.addEventListener('click', (e) => {
-            if (e.target === cancelModal) {
-                closeCancelModal();
-            }
+            bookingsList.appendChild(card);
         });
     }
 
-    // Modal Confirmation Button Handler
-    if (confirmCancelBtn) {
-        confirmCancelBtn.addEventListener('click', () => {
-            if (pendingCancelId) {
-                executeCancelBooking(pendingCancelId);
-            }
-        });
-    }
+    // ==========================================================================
+    // 2. Cancellation Workflow
+    // ==========================================================================
+    async function handleCancellation(booking) {
+        const refCode = booking.booking_reference || `#BK-${booking.booking_id}`;
+        const confirmed = window.confirm(
+            `Are you sure you want to cancel reservation ${refCode} for "${booking.movie_title}"?\n\n` +
+            `• All seats [${booking.seat_numbers}] will be released back to other cinema goers.\n` +
+            `• A simulated refund of ₹${parseFloat(booking.total_amount).toFixed(2)} will be initiated.\n\n` +
+            `This action cannot be undone.`
+        );
 
-    function closeCancelModal() {
-        if (cancelModal) {
-            cancelModal.classList.remove('active');
-            cancelModal.style.display = 'none';
-        }
-        pendingCancelId = null;
-    }
+        if (!confirmed) return;
 
-    /**
-     * Call PUT /api/bookings/:id/cancel
-     */
-    async function executeCancelBooking(bookingId) {
-        if (!bookingId) return;
-
-        if (confirmCancelBtn) {
-            confirmCancelBtn.disabled = true;
-            confirmCancelBtn.textContent = 'Cancelling...';
-        }
-
+        showLoading(true);
         try {
-            const response = await fetch(`/api/bookings/${encodeURIComponent(bookingId)}/cancel`, {
+            const res = await fetch(`/api/bookings/${booking.booking_id}/cancel`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Content-Type': 'application/json' }
             });
 
-            const result = await response.json();
+            const data = await res.json();
+            showLoading(false);
 
-            closeCancelModal();
-
-            if (!response.ok || !result.success) {
-                throw new Error(result.message || 'Failed to cancel reservation.');
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'Cancellation failed.');
             }
 
-            showAlert(result.message || 'Booking cancelled successfully. Seats have been restored.', 'success');
-
-            // Refresh the current search
+            showAlert(`✓ Booking ${refCode} has been cancelled successfully. Eligible seats have been released.`, 'success');
             if (currentEmail) {
                 searchBookings(currentEmail);
             }
-
-        } catch (error) {
-            console.error('Cancellation error:', error);
-            closeCancelModal();
-            showAlert(error.message || 'Failed to cancel booking. Please try again.', 'error');
-        } finally {
-            if (confirmCancelBtn) {
-                confirmCancelBtn.disabled = false;
-                confirmCancelBtn.textContent = 'Yes, Cancel Booking';
-            }
+        } catch (err) {
+            showLoading(false);
+            console.error('Cancellation error:', err);
+            showAlert(err.message || 'Unable to cancel booking at this time.', 'error');
         }
     }
 
-    /**
-     * Helpers
-     */
+    // ==========================================================================
+    // 3. Digital Ticket Modal
+    // ==========================================================================
+    function openTicketModal(b) {
+        if (!ticketModal) return;
+
+        const ticketRefCode = document.getElementById('ticketRefCode');
+        const ticketPosterImg = document.getElementById('ticketPosterImg');
+        const ticketMovieTitle = document.getElementById('ticketMovieTitle');
+        const ticketTheatreName = document.getElementById('ticketTheatreName');
+        const ticketScreenName = document.getElementById('ticketScreenName');
+        const ticketShowDate = document.getElementById('ticketShowDate');
+        const ticketShowTime = document.getElementById('ticketShowTime');
+        const ticketSeatsList = document.getElementById('ticketSeatsList');
+        const ticketCustomerName = document.getElementById('ticketCustomerName');
+        const ticketStatusBadge = document.getElementById('ticketStatusBadge');
+        const ticketTotalAmount = document.getElementById('ticketTotalAmount');
+
+        const refCode = b.booking_reference || `BK-${String(b.booking_id).padStart(6, '0')}`;
+        if (ticketRefCode) ticketRefCode.textContent = `#${refCode}`;
+        if (ticketPosterImg) ticketPosterImg.src = b.poster_url || '/images/posters/the-dark-knight.svg';
+        if (ticketMovieTitle) ticketMovieTitle.textContent = b.movie_title || 'Movie';
+        if (ticketTheatreName) ticketTheatreName.textContent = b.theatre_name || 'CinePass Grand Multiplex';
+        if (ticketScreenName) ticketScreenName.textContent = b.screen_name || 'Audi 1 - IMAX';
+        if (ticketShowDate) ticketShowDate.textContent = formatDate(b.show_date);
+        if (ticketShowTime) ticketShowTime.textContent = formatTime(b.show_time);
+        if (ticketSeatsList) ticketSeatsList.textContent = b.seat_numbers || 'Reserved';
+        if (ticketCustomerName) ticketCustomerName.textContent = b.customer_name || 'Customer';
+
+        const isConfirmed = (b.booking_status || 'CONFIRMED').toUpperCase() === 'CONFIRMED';
+        if (ticketStatusBadge) {
+            ticketStatusBadge.textContent = isConfirmed ? 'CONFIRMED & PAID' : 'CANCELLED & REFUNDED';
+            ticketStatusBadge.style.color = isConfirmed ? '#00e676' : '#ff4757';
+        }
+        if (ticketTotalAmount) {
+            ticketTotalAmount.textContent = `₹${parseFloat(b.total_amount).toFixed(2)}`;
+        }
+
+        ticketModal.classList.add('active');
+        ticketModal.style.display = 'flex';
+    }
+
+    if (closeTicketModalBtn && ticketModal) {
+        closeTicketModalBtn.addEventListener('click', () => {
+            ticketModal.classList.remove('active');
+            ticketModal.style.display = 'none';
+        });
+        ticketModal.addEventListener('click', (e) => {
+            if (e.target === ticketModal) {
+                ticketModal.classList.remove('active');
+                ticketModal.style.display = 'none';
+            }
+        });
+    }
+
+    // ==========================================================================
+    // 4. Watchlist Logic
+    // ==========================================================================
+    async function loadWatchlist() {
+        if (!watchlistGrid) return;
+        watchlistGrid.innerHTML = '';
+        if (noWatchlistFound) noWatchlistFound.classList.add('hidden');
+
+        let watchlistMovies = [];
+
+        // 1. Try fetching from MySQL if user has token
+        if (userToken) {
+            try {
+                const res = await fetch('/api/watchlist', {
+                    headers: { 'Authorization': `Bearer ${userToken}` }
+                });
+                const data = await res.json();
+                if (data.success && Array.isArray(data.data)) {
+                    watchlistMovies = data.data;
+                }
+            } catch (e) {
+                console.warn('Error fetching server watchlist:', e);
+            }
+        }
+
+        // 2. Also merge with local guest watchlist
+        const localListJson = localStorage.getItem('cinepass_watchlist');
+        let localIds = [];
+        if (localListJson) {
+            try {
+                localIds = JSON.parse(localListJson);
+            } catch (e) {}
+        }
+
+        // If local movies exist and aren't in watchlistMovies, fetch them from /api/movies
+        if (localIds.length > 0) {
+            try {
+                const res = await fetch('/api/movies');
+                const data = await res.json();
+                if (data.success && Array.isArray(data.data)) {
+                    localIds.forEach(id => {
+                        const match = data.data.find(m => String(m.movie_id) === String(id));
+                        if (match && !watchlistMovies.some(wm => String(wm.movie_id) === String(match.movie_id))) {
+                            watchlistMovies.push(match);
+                        }
+                    });
+                }
+            } catch (e) {}
+        }
+
+        // Render Watchlist
+        if (!watchlistMovies || watchlistMovies.length === 0) {
+            if (noWatchlistFound) noWatchlistFound.classList.remove('hidden');
+            return;
+        }
+
+        watchlistMovies.forEach(movie => {
+            const card = document.createElement('article');
+            card.className = 'movie-card';
+
+            const posterSrc = movie.poster_url || '/images/posters/the-dark-knight.svg';
+            const duration = movie.duration_minutes ? `${Math.floor(movie.duration_minutes / 60)}h ${movie.duration_minutes % 60}m` : '2h 15m';
+            const rating = movie.rating ? parseFloat(movie.rating).toFixed(1) : '4.8';
+
+            card.innerHTML = `
+                <div class="movie-poster-wrapper">
+                    <img src="${escapeHtml(posterSrc)}" alt="${escapeHtml(movie.title)}" class="movie-poster" loading="lazy">
+                    <span class="movie-rating-badge">★ ${rating}</span>
+                </div>
+                <div class="movie-card-body">
+                    <div class="movie-card-genre">${escapeHtml(movie.genre || 'Action')} • ${escapeHtml(movie.language || 'English')}</div>
+                    <h3 class="movie-card-title">${escapeHtml(movie.title)}</h3>
+                    <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">⏱ ${duration}</div>
+                    <div style="display: flex; gap: 8px;">
+                        <a href="movie.html?id=${movie.movie_id}" class="btn btn-primary btn-sm" style="flex: 2; text-align: center;">
+                            🎟️ Book Tickets
+                        </a>
+                        <button type="button" class="btn btn-secondary btn-sm remove-watchlist-btn" data-id="${movie.movie_id}" title="Remove from Watchlist" style="flex: 1;">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            const removeBtn = card.querySelector('.remove-watchlist-btn');
+            if (removeBtn) {
+                removeBtn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    await removeFromWatchlist(movie.movie_id);
+                });
+            }
+
+            watchlistGrid.appendChild(card);
+        });
+    }
+
+    async function removeFromWatchlist(movieId) {
+        // Remove from MySQL
+        if (userToken) {
+            try {
+                await fetch(`/api/watchlist/${movieId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${userToken}` }
+                });
+            } catch (e) {}
+        }
+
+        // Remove from local storage
+        const localListJson = localStorage.getItem('cinepass_watchlist');
+        if (localListJson) {
+            try {
+                let ids = JSON.parse(localListJson);
+                ids = ids.filter(id => String(id) !== String(movieId));
+                localStorage.setItem('cinepass_watchlist', JSON.stringify(ids));
+            } catch (e) {}
+        }
+
+        loadWatchlist();
+    }
+
+    // ==========================================================================
+    // 5. Utility Functions
+    // ==========================================================================
     function showLoading(isLoading) {
         if (loadingEl) {
             loadingEl.style.display = isLoading ? 'flex' : 'none';
@@ -379,14 +547,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    function formatCurrency(amount) {
-        const num = Number(amount) || 0;
-        return '₹' + num.toLocaleString('en-IN', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2
-        });
-    }
-
     function escapeHtml(str) {
         if (!str && str !== 0) return '';
         return String(str)
@@ -395,9 +555,5 @@ document.addEventListener('DOMContentLoaded', () => {
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
-    }
-
-    function currentMovieTitle(b) {
-        return b.title || b.movie || null;
     }
 });

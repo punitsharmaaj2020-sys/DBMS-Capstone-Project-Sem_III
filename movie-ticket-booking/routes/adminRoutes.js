@@ -1,20 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const adminAuth = require('../middleware/authMiddleware');
+const { adminAuth } = require('../middleware/authMiddleware');
 const {
     adminLogin,
     adminLogout,
     verifyAdmin,
+    getAllMovies,
     addMovie,
     updateMovie,
     deleteMovie,
     addShow,
     getAllBookings,
-    getAdminStats
+    getAdminStats,
+    getPopularMovies
 } = require('../controllers/adminController');
-const { getAllMovies } = require('../controllers/movieController');
 
-// Public admin routes
+// Public admin login
 router.post('/login', adminLogin);
 
 // Protected admin routes
@@ -27,5 +28,6 @@ router.delete('/movies/:id', adminAuth, deleteMovie);
 router.post('/shows', adminAuth, addShow);
 router.get('/bookings', adminAuth, getAllBookings);
 router.get('/stats', adminAuth, getAdminStats);
+router.get('/popular-movies', adminAuth, getPopularMovies);
 
 module.exports = router;

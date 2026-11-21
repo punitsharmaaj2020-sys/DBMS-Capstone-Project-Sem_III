@@ -288,10 +288,47 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (statTotalBookings) statTotalBookings.textContent = s.totalBookings || 0;
                 if (statTotalRevenue) statTotalRevenue.textContent = formatCurrency(s.totalRevenue || 0);
                 if (statTicketsSold) statTicketsSold.textContent = s.totalTicketsSold || 0;
+                renderPopularMovies(s.popularMovies || []);
             }
         } catch (err) {
             console.error('Error fetching admin stats:', err);
         }
+    }
+
+    function renderPopularMovies(movies) {
+        const tbody = document.getElementById('popularMoviesTableBody');
+        const countBadge = document.getElementById('popularMoviesCount');
+        if (!tbody) return;
+        tbody.innerHTML = '';
+
+        if (countBadge) {
+            countBadge.textContent = `${movies.length} Title${movies.length === 1 ? '' : 's'} Analyzed`;
+        }
+
+        if (!movies || movies.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="text-center text-muted" style="padding: 30px;">
+                        No movie bookings recorded yet.
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        movies.forEach((m, idx) => {
+            const tr = document.createElement('tr');
+            const rankMedal = idx === 0 ? '🥇 #1' : idx === 1 ? '🥈 #2' : idx === 2 ? '🥉 #3' : `#${idx + 1}`;
+            tr.innerHTML = `
+                <td style="font-weight: 700; color: #ffb703; font-size: 1.05rem;">${rankMedal}</td>
+                <td><strong style="color: #fff;">${escapeHtml(m.movie_title || '')}</strong></td>
+                <td><span class="badge badge-category">${escapeHtml(m.genre || 'N/A')}</span></td>
+                <td>${m.total_scheduled_shows || 0}</td>
+                <td><span class="badge badge-success" style="font-size: 0.9rem;">${m.tickets_sold || 0} tickets</span></td>
+                <td><strong style="color: #4ade80;">${formatCurrency(m.total_revenue || 0)}</strong></td>
+            `;
+            tbody.appendChild(tr);
+        });
     }
 
     // =========================================================================

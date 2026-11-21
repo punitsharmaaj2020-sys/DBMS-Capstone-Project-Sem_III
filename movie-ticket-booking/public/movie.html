@@ -3,29 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="View showtimes and book tickets for your favorite movies at MovieBook. Instant booking and seat reservation.">
-  <title>Movie Details & Booking - MovieBook</title>
+  <meta name="description" content="View showtimes, select seats interactively, and book movie tickets online with CinePass.">
+  <title>Movie Details &amp; Interactive Seat Booking - CinePass</title>
 
-  <!-- Google Fonts: Poppins (300, 400, 500, 600, 700) -->
+  <!-- Google Fonts: Poppins (300, 400, 500, 600, 700, 800) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
+
+  <!-- Razorpay Checkout Script (Optional Test Mode) -->
+  <script src="https://checkout.razorpay.com/v1/checkout.js" async></script>
 </head>
 <body>
 
   <!-- Navigation Bar -->
   <nav class="navbar" id="mainNavbar">
     <div class="container navbar-inner">
-      <a href="index.html" class="nav-brand" aria-label="MovieBook Home">
+      <a href="index.html" class="nav-brand" aria-label="CinePass Home">
         <span class="brand-icon">🎬</span>
-        <span>Movie<span class="brand-accent">Book</span></span>
+        <span>Cine<span class="brand-accent">Pass</span></span>
+        <span style="font-size: 0.68rem; font-weight: 700; background: var(--accent-red); color: #fff; padding: 2px 6px; border-radius: 4px; margin-left: 6px;">PRIME</span>
       </a>
 
+      <!-- Location Picker Dropdown -->
+      <div class="nav-location-picker">
+        <span>📍</span>
+        <select id="citySelect" class="nav-location-select" aria-label="Select City">
+          <option value="all">All Cities</option>
+          <option value="Mumbai" selected>Mumbai</option>
+          <option value="Delhi">Delhi</option>
+          <option value="Bengaluru">Bengaluru</option>
+        </select>
+      </div>
+
       <!-- Mobile Hamburger Button -->
-      <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
+      <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation Menu">
         <span></span>
         <span></span>
         <span></span>
@@ -40,18 +55,32 @@
           <a href="index.html#movies" class="nav-link active">Movies</a>
         </li>
         <li class="nav-item">
+          <a href="index.html#theatres" class="nav-link">Theatres</a>
+        </li>
+        <li class="nav-item">
           <a href="bookings.html" class="nav-link">My Bookings</a>
+        </li>
+        <li class="nav-item">
+          <a href="bookings.html?tab=watchlist" class="nav-link">Watchlist</a>
         </li>
         <li class="nav-item">
           <a href="admin.html" class="nav-link">Admin</a>
         </li>
       </ul>
+
+      <!-- User Auth Actions -->
+      <div class="nav-user-actions" id="userNavActions">
+        <button class="btn btn-primary btn-auth-nav" id="openAuthModalBtn">
+          <span>Sign In</span>
+        </button>
+      </div>
     </div>
   </nav>
 
   <!-- Main Content -->
   <main class="section-padding">
     <div class="container">
+      
       <!-- Back Link -->
       <a href="index.html#movies" class="back-link">
         <span aria-hidden="true">&larr;</span> Back to All Movies
@@ -65,54 +94,69 @@
       <!-- Loading Spinner -->
       <div id="movieDetailsLoading" class="loading-container">
         <div class="spinner"></div>
-        <p>Loading movie details & showtimes...</p>
+        <p>Loading movie information, ratings, and showtimes...</p>
       </div>
 
-      <!-- Movie Details Container -->
-      <article id="movieDetailsContent" class="movie-detail-grid hidden">
+      <!-- Movie Details Hero Container -->
+      <article id="movieDetailsContent" class="movie-detail-grid hidden" style="margin-bottom: 40px;">
         <!-- Movie Poster Column -->
         <div class="movie-detail-poster">
           <img 
             id="moviePoster" 
             src="" 
             alt="Movie Poster"
-            onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'480\' viewBox=\'0 0 320 480\'><rect fill=\'%231a1a2e\' width=\'320\' height=\'480\'/><text fill=\'%23b0b0b0\' font-family=\'sans-serif\' font-size=\'18\' dy=\'10.5\' font-weight=\'bold\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\'>🎬 No Poster Available</text></svg>';"
+            onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'320\' height=\'480\' viewBox=\'0 0 320 480\'><rect fill=\'%231a1a2e\' width=\'320\' height=\'480\'/><text fill=\'%23b0b0b0\' font-family=\'sans-serif\' font-size=\'18\' dy=\'10.5\' font-weight=\'bold\' x=\'50%25\' y=\'50%25\' text-anchor=\'middle\'>🎬 No Poster</text></svg>';"
           >
         </div>
 
         <!-- Movie Information Column -->
         <div class="movie-detail-info">
-          <h1 id="movieTitle" class="movie-detail-title">Movie Title</h1>
+          <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+            <h1 id="movieTitle" class="movie-detail-title">Movie Title</h1>
+            <button class="btn btn-secondary" id="watchlistToggleBtn" style="white-space: nowrap; font-size: 0.88rem;">
+              <span>+ Add to Watchlist</span>
+            </button>
+          </div>
           
-          <div class="movie-badges-row">
+          <div class="movie-badges-row" style="margin: 14px 0;">
+            <span id="movieRatingBadge" class="badge" style="background: rgba(245, 166, 35, 0.2); color: #f5a623; border: 1px solid #f5a623;">★ 4.9 (12.5k Votes)</span>
             <span id="movieGenre" class="badge badge-genre">Genre</span>
             <span id="movieDuration" class="badge badge-info">⏱ 0 mins</span>
             <span id="movieLanguage" class="badge badge-language" style="position: static;">Language</span>
-            <span id="movieReleaseDate" class="badge badge-info">📅 Release Date</span>
+            <span id="movieReleaseStatus" class="badge" style="background: rgba(0, 230, 118, 0.2); color: #00e676;">NOW SHOWING</span>
           </div>
 
-          <h3 class="movie-overview-title">Overview</h3>
+          <p id="movieCastCrew" style="font-size: 0.92rem; color: #bbb; margin-bottom: 16px;">
+            <strong>Cast &amp; Crew:</strong> <span id="castCrewText">Director &amp; Actors</span>
+          </p>
+
+          <h3 class="movie-overview-title">Synopsis</h3>
           <p id="movieDescription" class="movie-description">Movie synopsis description goes here.</p>
         </div>
       </article>
 
-      <!-- Available Shows Section -->
+      <!-- Available Shows & Theatres Section -->
       <section id="showsSection" class="shows-section hidden">
-        <div class="section-header">
+        <div class="section-header" style="flex-wrap: wrap; gap: 16px;">
           <div>
-            <h2 class="section-title">Select a Showtime</h2>
-            <p class="section-subtitle">Choose your preferred screening time to reserve tickets</p>
+            <h2 class="section-title">Select Theatre &amp; Showtime</h2>
+            <p class="section-subtitle">Select your preferred date, venue, and screening time to book seats</p>
+          </div>
+
+          <!-- Date Selector Pills -->
+          <div class="filter-bar" id="dateFilterBar">
+            <!-- Dynamically populated (Today, Tomorrow, Day 2, Day 3) -->
           </div>
         </div>
 
         <!-- Shows Loading Spinner -->
         <div id="showsLoading" class="loading-container hidden">
           <div class="spinner"></div>
-          <p>Fetching scheduled showtimes...</p>
+          <p>Fetching scheduled showtimes across theatres...</p>
         </div>
 
-        <!-- Shows Grid Container -->
-        <div id="showsList" class="shows-grid">
+        <!-- Theatres & Shows Container -->
+        <div id="theatresShowsList">
           <!-- Dynamically populated via js/movie.js -->
         </div>
 
@@ -120,194 +164,367 @@
         <div id="noShowsMessage" class="empty-state hidden">
           <div class="empty-state-icon">🎟️</div>
           <h3>No Shows Scheduled</h3>
-          <p>There are currently no upcoming showtimes for this movie. Please check back later or explore other movies.</p>
+          <p>There are currently no upcoming showtimes for this movie in the selected city. Please check back later or try another city!</p>
           <a href="index.html#movies" class="btn btn-secondary">Explore Other Movies</a>
         </div>
       </section>
 
-      <!-- Booking Form Section (Hidden until show selected) -->
-      <section id="bookingSection" class="booking-section hidden">
+      <!-- Interactive Seat Selection Section (Smoothly appears upon showtime click) -->
+      <section id="seatSelectionSection" class="seat-booking-container hidden">
         <div class="section-header">
           <div>
-            <h2 class="section-title">Ticket Booking</h2>
-            <p class="section-subtitle">Enter your details to confirm your cinema reservation</p>
+            <h2 class="section-title">Choose Your Seats</h2>
+            <p class="section-subtitle" id="selectedShowMetadata">Movie • Theatre • Audi 1 • Date &amp; Time</p>
+          </div>
+          <button type="button" class="btn btn-secondary" id="changeShowBtn" style="font-size: 0.85rem;">
+            <span>Change Show</span>
+          </button>
+        </div>
+
+        <!-- Curved Cinema Screen Indicator -->
+        <div class="cinema-screen-wrap">
+          <div class="cinema-screen-curve"></div>
+          <p class="cinema-screen-text">ALL EYES THIS WAY • THEATRE SCREEN</p>
+        </div>
+
+        <!-- Seat Tiers Legend -->
+        <div class="seat-legend">
+          <div class="legend-item">
+            <span class="legend-box seat-available"></span>
+            <span>Available</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-box seat-selected"></span>
+            <span>Selected</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-box seat-occupied"></span>
+            <span>Occupied / Sold</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-box seat-recliner seat-available"></span>
+            <span>Recliner (₹350+)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-box seat-premium seat-available"></span>
+            <span>Premium (₹250+)</span>
           </div>
         </div>
 
-        <!-- Selected Show Info Banner -->
-        <div class="selected-show-banner" id="selectedShowBanner">
-          <div class="selected-show-info">
-            <h4 id="bannerMovieTitle">Movie Title</h4>
-            <p id="bannerShowDetails">Date: -- | Time: --</p>
-          </div>
-          <div class="selected-show-price">
-            <span class="text-muted" style="font-size: 0.8rem; display: block;">Price per ticket</span>
-            <span class="price-tag" id="bannerPricePerTicket">₹0</span>
-          </div>
+        <div style="text-align: center; margin: 10px 0 16px 0;">
+          <span style="display: inline-block; background: rgba(233, 69, 96, 0.12); color: #fff; padding: 6px 16px; border-radius: 20px; font-size: 0.86rem; border: 1px solid rgba(233, 69, 96, 0.35);">
+            🪑 <strong>Step 1:</strong> Click any available seat below to select it (Max 8 seats)
+          </span>
         </div>
 
-        <!-- Booking Form Alert -->
-        <div id="bookingAlert" class="alert hidden" role="alert"></div>
+        <!-- Interactive Seat Grid -->
+        <div class="seat-map-layout" id="seatMapLayout">
+          <!-- Dynamically rendered via js/movie.js -->
+        </div>
 
-        <!-- Booking Form -->
-        <form id="bookingForm" novalidate>
-          <input type="hidden" id="selectedShowId" name="showId" value="">
-
+        <!-- Booking Price Summary & Checkout Panel -->
+        <div class="booking-summary-panel">
+          <h3 style="font-size: 1.2rem; margin-bottom: 16px; color: #fff;">Order Summary &amp; Checkout</h3>
+          
           <div class="form-grid">
-            <!-- Customer Name -->
             <div class="form-group">
-              <label for="customerName" class="form-label">Full Name *</label>
-              <input 
-                type="text" 
-                id="customerName" 
-                name="customerName" 
-                class="form-control" 
-                placeholder="Enter your full name" 
-                required
-              >
+              <label class="form-label" for="custName">Your Full Name *</label>
+              <input type="text" id="custName" class="form-control" placeholder="Akshat Tomar" required>
             </div>
-
-            <!-- Customer Email -->
             <div class="form-group">
-              <label for="customerEmail" class="form-label">Email Address *</label>
-              <input 
-                type="email" 
-                id="customerEmail" 
-                name="customerEmail" 
-                class="form-control" 
-                placeholder="you@example.com" 
-                required
-              >
-            </div>
-
-            <!-- Number of Tickets -->
-            <div class="form-group">
-              <label for="ticketCount" class="form-label">Number of Tickets (1-10) *</label>
-              <select id="ticketCount" name="ticketCount" class="form-control" required>
-                <option value="1" selected>1 Ticket</option>
-                <option value="2">2 Tickets</option>
-                <option value="3">3 Tickets</option>
-                <option value="4">4 Tickets</option>
-                <option value="5">5 Tickets</option>
-                <option value="6">6 Tickets</option>
-                <option value="7">7 Tickets</option>
-                <option value="8">8 Tickets</option>
-                <option value="9">9 Tickets</option>
-                <option value="10">10 Tickets</option>
-              </select>
+              <label class="form-label" for="custEmail">Your Email Address *</label>
+              <input type="email" id="custEmail" class="form-control" placeholder="akshat@example.com" required>
             </div>
           </div>
 
-          <!-- Price Calculation Breakdown Card -->
+          <!-- Coupon Code Input -->
+          <div class="coupon-input-wrap">
+            <input type="text" id="couponInput" class="form-control" placeholder="ENTER COUPON CODE (e.g. WELCOME50, CINE100)">
+            <button type="button" class="btn btn-secondary" id="applyCouponBtn">Apply Coupon</button>
+          </div>
+          <div id="couponMessage" style="font-size: 0.88rem; margin-top: -10px; margin-bottom: 14px; display: none;"></div>
+
+          <!-- Price Calculation Card -->
           <div class="price-calculation-card">
             <div class="price-row">
-              <span>Ticket Price</span>
-              <span id="calcTicketPrice">₹0.00</span>
+              <span>Selected Seats:</span>
+              <strong id="summarySelectedSeats" style="color: var(--accent-red);">None selected</strong>
             </div>
             <div class="price-row">
-              <span>Tickets Quantity</span>
-              <span id="calcTicketQty">1</span>
+              <span>Tickets Subtotal:</span>
+              <span id="summarySubtotal">₹0.00</span>
+            </div>
+            <div class="price-row">
+              <span>Convenience Fee (₹25/ticket):</span>
+              <span id="summaryConvenienceFee">₹0.00</span>
+            </div>
+            <div class="price-row" id="discountRow" style="display: none; color: #00e676;">
+              <span>Promo Discount:</span>
+              <span id="summaryDiscount">-₹0.00</span>
             </div>
             <div class="price-row total-row">
-              <span>Total Payable Amount</span>
-              <span class="total-amount" id="calcTotalAmount">₹0.00</span>
+              <span>Total Payable Amount:</span>
+              <span class="total-amount" id="summaryTotalAmount">₹0.00</span>
             </div>
           </div>
 
-          <!-- Submit Button -->
-          <button type="submit" id="bookNowBtn" class="btn btn-primary btn-block btn-lg">
-            <span>Confirm &amp; Book Tickets Now</span>
+          <!-- Payment CTA Button -->
+          <button type="button" id="proceedToPayBtn" class="btn btn-primary btn-block btn-lg">
+            <span>💳 Select Seats Above to Proceed</span>
           </button>
-        </form>
+        </div>
       </section>
 
-      <!-- Booking Confirmation Modal (Hidden by default) -->
-      <div id="bookingSuccessModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="confirmModalTitle">
-        <div class="modal-card">
-          <button type="button" class="modal-close-btn" id="modalCloseBtn" aria-label="Close Confirmation Modal">&times;</button>
-          
-          <div class="modal-header text-center">
-            <div style="font-size: 3.5rem; margin-bottom: 12px; color: #00e676;">🎉</div>
-            <h2 class="modal-title" id="confirmModalTitle">Booking Confirmed!</h2>
-            <p class="section-subtitle">Your cinema tickets have been reserved successfully.</p>
-          </div>
-
-          <div class="modal-body">
-            <div class="price-calculation-card" style="margin-bottom: 0;">
-              <div class="price-row">
-                <span class="text-muted">Booking Reference:</span>
-                <strong id="confirmBookingId" style="color: var(--accent-red); font-size: 1.05rem;">#BK-0000</strong>
-              </div>
-              <div class="price-row">
-                <span class="text-muted">Movie:</span>
-                <span id="confirmMovieTitle" style="font-weight: 600;">Movie Name</span>
-              </div>
-              <div class="price-row">
-                <span class="text-muted">Show Date &amp; Time:</span>
-                <span id="confirmShowTime">--</span>
-              </div>
-              <div class="price-row">
-                <span class="text-muted">Tickets Reserved:</span>
-                <span id="confirmTicketsCount">1 Ticket</span>
-              </div>
-              <div class="price-row">
-                <span class="text-muted">Customer Name:</span>
-                <span id="confirmCustomerName">--</span>
-              </div>
-              <div class="price-row">
-                <span class="text-muted">Confirmation Sent To:</span>
-                <span id="confirmCustomerEmail">--</span>
-              </div>
-              <div class="price-row total-row">
-                <span>Total Paid:</span>
-                <span class="total-amount" id="confirmTotalAmount">₹0.00</span>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer" style="flex-direction: column; gap: 10px;">
-            <a href="bookings.html" id="btnViewBookings" class="btn btn-primary btn-block">
-              View My Bookings
-            </a>
-            <a href="index.html" id="btnBookAnother" class="btn btn-secondary btn-block">
-              Book Another Movie
-            </a>
+      <!-- Customer Reviews & Ratings Section -->
+      <section class="section-padding" style="margin-top: 40px; border-top: 1px solid var(--border-color);">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Audience Reviews &amp; Ratings</h2>
+            <p class="section-subtitle">Verified reviews from moviegoers who watched this title</p>
           </div>
         </div>
-      </div>
+
+        <!-- Add Review Form -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: 12px; padding: 24px; margin-bottom: 30px;">
+          <h4 style="font-size: 1.1rem; margin-bottom: 12px; color: #fff;">Write a Review</h4>
+          <form id="addReviewForm">
+            <div style="display: flex; gap: 14px; align-items: center; margin-bottom: 14px;">
+              <label style="font-size: 0.9rem; color: var(--text-secondary);">Your Rating:</label>
+              <select id="reviewRatingSelect" class="form-control" style="width: auto;">
+                <option value="5">★★★★★ (5 - Masterpiece)</option>
+                <option value="4">★★★★☆ (4 - Great)</option>
+                <option value="3">★★★☆☆ (3 - Good)</option>
+                <option value="2">★★☆☆☆ (2 - Average)</option>
+                <option value="1">★☆☆☆☆ (1 - Poor)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <textarea id="reviewTextInput" class="form-control" rows="3" placeholder="Share your experience about the direction, acting, music, and visuals..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Verified Review</button>
+          </form>
+        </div>
+
+        <!-- Reviews List -->
+        <div id="reviewsList" style="display: flex; flex-direction: column; gap: 16px;">
+          <!-- Dynamically populated via js/movie.js -->
+        </div>
+      </section>
 
     </div>
   </main>
 
+  <!-- Payment Modal / Simulator (Opens during payment workflow) -->
+  <div id="paymentModal" class="modal-overlay" role="dialog" aria-modal="true" style="display: none;">
+    <div class="payment-modal-card">
+      <div class="payment-modal-header">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="font-size: 1.5rem;">🔒</span>
+          <div>
+            <h3 style="font-size: 1.05rem; font-weight: 700; color: #fff;">CinePass Payment Gateway</h3>
+            <p style="font-size: 0.78rem; color: var(--text-muted);">Secure 256-Bit SSL Encrypted Transaction</p>
+          </div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span class="rzp-badge" id="paymentModeBadge">TEST MODE</span>
+          <button type="button" id="closePaymentModalX" style="background: none; border: none; color: #fff; font-size: 1.6rem; cursor: pointer; line-height: 1; padding: 0 4px;" title="Close">&times;</button>
+        </div>
+      </div>
+
+      <!-- Amount Banner -->
+      <div style="background: rgba(233, 69, 96, 0.1); padding: 14px 24px; border-bottom: 1px solid rgba(233, 69, 96, 0.2); display: flex; justify-content: space-between; align-items: center;">
+        <span style="font-size: 0.9rem; color: var(--text-secondary);">Total Payable:</span>
+        <span style="font-size: 1.3rem; font-weight: 800; color: var(--accent-red);" id="modalPayableAmount">₹0.00</span>
+      </div>
+
+      <!-- Payment Tabs -->
+      <div class="payment-tabs">
+        <button class="payment-tab-btn active" data-tab="upi">UPI / QR Code</button>
+        <button class="payment-tab-btn" data-tab="card">Debit / Credit Card</button>
+        <button class="payment-tab-btn" data-tab="netbanking">Net Banking</button>
+      </div>
+
+      <!-- UPI Tab Content -->
+      <div class="payment-tab-content" id="tabContentUpi">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="width: 140px; height: 140px; margin: 0 auto 12px auto; background: #fff; padding: 10px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+            <svg width="120" height="120" viewBox="0 0 100 100">
+              <rect x="0" y="0" width="30" height="30" fill="#000"/>
+              <rect x="5" y="5" width="20" height="20" fill="#fff"/>
+              <rect x="10" y="10" width="10" height="10" fill="#000"/>
+              <rect x="70" y="0" width="30" height="30" fill="#000"/>
+              <rect x="75" y="5" width="20" height="20" fill="#fff"/>
+              <rect x="80" y="10" width="10" height="10" fill="#000"/>
+              <rect x="0" y="70" width="30" height="30" fill="#000"/>
+              <rect x="5" y="75" width="20" height="20" fill="#fff"/>
+              <rect x="10" y="80" width="10" height="10" fill="#000"/>
+              <rect x="40" y="20" width="20" height="15" fill="#e50914"/>
+              <rect x="40" y="45" width="20" height="20" fill="#000"/>
+              <rect x="65" y="65" width="25" height="25" fill="#000"/>
+            </svg>
+          </div>
+          <p style="font-size: 0.82rem; color: var(--text-muted);">Scan QR with Google Pay, PhonePe, or Paytm (Test Mode)</p>
+        </div>
+        <div class="form-group">
+          <input type="text" class="form-control" value="cinepass.test@upi" readonly style="text-align: center; font-weight: 600;">
+        </div>
+      </div>
+
+      <!-- Card Tab Content (Hidden by default) -->
+      <div class="payment-tab-content hidden" id="tabContentCard">
+        <div class="form-group">
+          <label class="form-label">Test Card Number</label>
+          <input type="text" class="form-control" value="4111 2222 3333 4444" readonly>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div class="form-group">
+            <label class="form-label">Expiry</label>
+            <input type="text" class="form-control" value="12/28" readonly>
+          </div>
+          <div class="form-group">
+            <label class="form-label">CVV</label>
+            <input type="text" class="form-control" value="789" readonly>
+          </div>
+        </div>
+      </div>
+
+      <!-- Net Banking Tab Content (Hidden by default) -->
+      <div class="payment-tab-content hidden" id="tabContentNetbanking">
+        <div class="form-group">
+          <label class="form-label">Select Bank</label>
+          <select class="form-control">
+            <option>HDFC Bank (Test Simulator)</option>
+            <option>State Bank of India (Test Simulator)</option>
+            <option>ICICI Bank (Test Simulator)</option>
+            <option>Axis Bank (Test Simulator)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div style="padding: 16px 24px 24px 24px; display: flex; gap: 12px;">
+        <button type="button" class="btn btn-secondary" id="cancelPaymentBtn" style="flex: 1;">
+          <span>Cancel</span>
+        </button>
+        <button type="button" class="btn btn-primary" id="confirmPaymentSuccessBtn" style="flex: 2;">
+          <span>✓ Pay Now (Test Mode)</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Digital Ticket Confirmation Modal -->
+  <div id="ticketModal" class="modal-overlay" role="dialog" aria-modal="true" style="display: none;">
+    <div class="ticket-wrapper">
+      <div class="digital-ticket-card">
+        <!-- Ticket Header -->
+        <div class="ticket-header">
+          <div>
+            <div class="ticket-header-brand">🎬 CINEPASS PRIME</div>
+            <div style="font-size: 0.8rem; opacity: 0.9;">ORIGINAL CINEMA E-TICKET</div>
+          </div>
+          <div class="ticket-header-ref" id="ticketRefCode">#BK-000000</div>
+        </div>
+
+        <!-- Ticket Body -->
+        <div class="ticket-body">
+          <img id="ticketPosterImg" src="" alt="Movie Poster" class="ticket-poster-img">
+          
+          <div class="ticket-info-grid">
+            <div class="ticket-info-item" style="grid-column: 1 / -1;">
+              <span class="ticket-info-label">Movie</span>
+              <span class="ticket-info-val" id="ticketMovieTitle" style="font-size: 1.25rem; color: #fff;">Movie Title</span>
+            </div>
+            
+            <div class="ticket-info-item">
+              <span class="ticket-info-label">Cinema Theatre</span>
+              <span class="ticket-info-val" id="ticketTheatreName">PVR ICON</span>
+            </div>
+
+            <div class="ticket-info-item">
+              <span class="ticket-info-label">Screen</span>
+              <span class="ticket-info-val" id="ticketScreenName">Audi 1 - IMAX</span>
+            </div>
+
+            <div class="ticket-info-item">
+              <span class="ticket-info-label">Date</span>
+              <span class="ticket-info-val" id="ticketShowDate">2026-11-17</span>
+            </div>
+
+            <div class="ticket-info-item">
+              <span class="ticket-info-label">Time</span>
+              <span class="ticket-info-val" id="ticketShowTime">18:45 PM</span>
+            </div>
+
+            <!-- Seats Highlight -->
+            <div class="ticket-seats-highlight">
+              <span class="ticket-info-label" style="color: var(--accent-red); font-weight: 700;">RESERVED SEATS</span>
+              <div style="font-size: 1.3rem; font-weight: 800; color: #fff;" id="ticketSeatsList">A1, A2</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Perforation Divider -->
+        <div class="ticket-perforation">
+          <div class="ticket-notch-left"></div>
+          <div class="ticket-perforation-line"></div>
+          <div class="ticket-notch-right"></div>
+        </div>
+
+        <!-- Ticket Footer -->
+        <div class="ticket-footer">
+          <div class="ticket-qr-wrap">
+            <div class="ticket-qr-svg">
+              <!-- SVG QR Code Icon -->
+              <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <rect x="0" y="0" width="30" height="30" fill="#000"/>
+                <rect x="5" y="5" width="20" height="20" fill="#fff"/>
+                <rect x="10" y="10" width="10" height="10" fill="#000"/>
+                <rect x="70" y="0" width="30" height="30" fill="#000"/>
+                <rect x="75" y="5" width="20" height="20" fill="#fff"/>
+                <rect x="80" y="10" width="10" height="10" fill="#000"/>
+                <rect x="0" y="70" width="30" height="30" fill="#000"/>
+                <rect x="5" y="75" width="20" height="20" fill="#fff"/>
+                <rect x="10" y="80" width="10" height="10" fill="#000"/>
+                <circle cx="50" cy="50" r="10" fill="#e50914"/>
+              </svg>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted);">Booked By</div>
+              <div style="font-size: 0.95rem; font-weight: 600; color: #fff;" id="ticketCustomerName">Customer</div>
+              <div style="font-size: 0.8rem; color: #00e676; font-weight: 700;">CONFIRMED &amp; PAID</div>
+            </div>
+          </div>
+
+          <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--text-muted); text-align: right;">Total Amount</div>
+            <div style="font-size: 1.4rem; font-weight: 800; color: #fff; text-align: right;" id="ticketTotalAmount">₹0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal Footer CTA -->
+      <div style="display: flex; gap: 14px; margin-top: 20px; justify-content: center;">
+        <button type="button" class="btn btn-primary" onclick="window.print()">
+          <span>🖨️ Download / Print Ticket (PDF)</span>
+        </button>
+        <a href="bookings.html" class="btn btn-secondary">
+          <span>Go to My Bookings</span>
+        </a>
+      </div>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="footer">
     <div class="container footer-content">
-      <div class="footer-brand">🎬 MovieBook</div>
-      <p>Movie Ticket Booking System &copy; 2026. Designed with passion for cinema lovers.</p>
-      <ul class="footer-links">
-        <li><a href="index.html">Home</a></li>
-        <li><a href="index.html#movies">Movies</a></li>
-        <li><a href="bookings.html">My Bookings</a></li>
-        <li><a href="admin.html">Admin Panel</a></li>
-      </ul>
+      <div class="footer-brand">🎬 CinePass Prime</div>
+      <p>Movie Ticket Booking System &copy; 2026. DBMS Capstone Project.</p>
     </div>
   </footer>
 
-  <!-- Mobile Nav Script Helper -->
-  <script>
-    const navToggle = document.getElementById('navToggle');
-    const navLinks = document.getElementById('navLinks');
-    if (navToggle && navLinks) {
-      navToggle.addEventListener('click', () => {
-        navToggle.classList.toggle('active');
-        navLinks.classList.toggle('active');
-        const expanded = navToggle.getAttribute('aria-expanded') === 'true' || false;
-        navToggle.setAttribute('aria-expanded', !expanded);
-      });
-    }
-  </script>
-
-  <!-- Movie Details & Booking Script -->
+  <!-- Page Scripts -->
+  <script src="js/profile.js"></script>
   <script src="js/movie.js"></script>
 </body>
 </html>

@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Book tickets for the latest blockbuster movies at MovieBook. Seamless online movie ticket booking with real-time seat availability and instant confirmation.">
-  <title>MovieBook - Book Movie Tickets Online</title>
+  <meta name="description" content="CinePass - Premium Online Movie Ticket Booking Platform with real-time seat availability, instant confirmation, and smart discounts.">
+  <title>CinePass - Premium Movie Ticket Booking Platform</title>
 
-  <!-- Google Fonts: Poppins (300, 400, 500, 600, 700) -->
+  <!-- Google Fonts: Poppins (300, 400, 500, 600, 700, 800) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
@@ -19,10 +19,22 @@
   <!-- Navigation Bar -->
   <nav class="navbar" id="mainNavbar">
     <div class="container navbar-inner">
-      <a href="index.html" class="nav-brand" aria-label="MovieBook Home">
+      <a href="index.html" class="nav-brand" aria-label="CinePass Home">
         <span class="brand-icon">🎬</span>
-        <span>Movie<span class="brand-accent">Book</span></span>
+        <span>Cine<span class="brand-accent">Pass</span></span>
+        <span style="font-size: 0.68rem; font-weight: 700; background: var(--accent-red); color: #fff; padding: 2px 6px; border-radius: 4px; margin-left: 6px; letter-spacing: 0.5px;">PRIME</span>
       </a>
+
+      <!-- Location Picker Dropdown -->
+      <div class="nav-location-picker" title="Select your cinema city">
+        <span>📍</span>
+        <select id="citySelect" class="nav-location-select" aria-label="Select City">
+          <option value="all">All Cities</option>
+          <option value="Mumbai" selected>Mumbai</option>
+          <option value="Delhi">Delhi</option>
+          <option value="Bengaluru">Bengaluru</option>
+        </select>
+      </div>
 
       <!-- Mobile Hamburger Button -->
       <button class="nav-toggle" id="navToggle" aria-label="Toggle Navigation Menu" aria-expanded="false">
@@ -40,69 +52,126 @@
           <a href="#movies" class="nav-link">Movies</a>
         </li>
         <li class="nav-item">
+          <a href="#theatres" class="nav-link">Theatres</a>
+        </li>
+        <li class="nav-item">
+          <a href="#offers" class="nav-link">Offers</a>
+        </li>
+        <li class="nav-item">
           <a href="bookings.html" class="nav-link">My Bookings</a>
+        </li>
+        <li class="nav-item">
+          <a href="bookings.html?tab=watchlist" class="nav-link">Watchlist</a>
         </li>
         <li class="nav-item">
           <a href="admin.html" class="nav-link">Admin</a>
         </li>
       </ul>
+
+      <!-- User Auth Profile Actions -->
+      <div class="nav-user-actions" id="userNavActions">
+        <button class="btn btn-primary btn-auth-nav" id="openAuthModalBtn">
+          <span>Sign In</span>
+        </button>
+      </div>
     </div>
   </nav>
 
   <!-- Main Content -->
   <main>
-    <!-- Hero Section -->
-    <header class="hero">
+    <div class="container" style="padding-top: 30px;">
+      
+      <!-- Hero Promotional Featured Movie Banner -->
+      <div class="hero-featured-banner" id="heroBanner">
+        <div class="hero-banner-content">
+          <span class="badge-featured">🔥 BLOCKBUSTER OF THE WEEK</span>
+          <h1 class="hero-banner-title" id="heroMovieTitle">The Dark Knight</h1>
+          <div class="hero-banner-meta">
+            <span class="rating-star">★ 4.9 / 5.0</span>
+            <span>•</span>
+            <span id="heroMovieGenre">Action / Crime</span>
+            <span>•</span>
+            <span id="heroMovieDuration">2h 32m</span>
+            <span>•</span>
+            <span id="heroMovieLang">English • IMAX 2D</span>
+          </div>
+          <p class="hero-banner-desc" id="heroMovieDesc">
+            When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.
+          </p>
+          <div class="hero-banner-actions">
+            <a href="movie.html?id=1" id="heroBookBtn" class="btn btn-primary btn-lg">
+              <span>🎟️ Book Tickets Now</span>
+            </a>
+            <a href="https://www.youtube.com/watch?v=EXeTwQWrcwY" target="_blank" rel="noopener" class="btn btn-secondary btn-lg" id="heroTrailerBtn">
+              <span>▶ Watch Trailer</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Movies Section -->
+    <section class="section-padding" id="movies">
       <div class="container">
-        <h1 class="hero-title">Movie Ticket <span>Booking System</span></h1>
-        <p class="hero-subtitle">Book your favorite movies online in seconds. Discover now showing blockbusters and secure your cinema experience.</p>
         
-        <!-- Search Bar -->
-        <div class="search-container">
-          <div class="search-bar-wrapper">
+        <!-- Category Switcher: Now Showing vs Coming Soon -->
+        <div class="category-tabs">
+          <button class="category-tab-btn active" data-status="NOW_SHOWING">Now Showing</button>
+          <button class="category-tab-btn" data-status="COMING_SOON">Coming Soon</button>
+        </div>
+
+        <!-- Section Header & Filters Bar -->
+        <div class="section-header" style="flex-wrap: wrap; gap: 20px;">
+          <!-- Search Bar -->
+          <div class="search-bar-wrapper" style="max-width: 420px; flex: 1;">
             <span class="search-icon" aria-hidden="true">🔍</span>
             <input 
               type="text" 
               id="movieSearchInput" 
               class="search-input" 
-              placeholder="Search movies by title, genre, or language..." 
+              placeholder="Search movies by title, genre, actor..." 
               autocomplete="off"
             >
           </div>
+
+          <!-- Sort & Language Controls -->
+          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <select id="languageFilterSelect" class="form-control" style="width: auto; padding: 10px 16px;">
+              <option value="all">All Languages</option>
+              <option value="English">English</option>
+              <option value="Telugu">Telugu</option>
+              <option value="Korean">Korean</option>
+            </select>
+
+            <select id="sortSelect" class="form-control" style="width: auto; padding: 10px 16px;">
+              <option value="rating">Top Rated (★)</option>
+              <option value="popularity">Most Popular</option>
+              <option value="latest">Latest Release</option>
+              <option value="title_asc">Title (A - Z)</option>
+            </select>
+          </div>
         </div>
-      </div>
-    </header>
 
-    <!-- Movies Section -->
-    <section class="section-padding" id="movies">
-      <div class="container">
-        <!-- Section Header -->
-        <div class="section-header">
-          <div>
-            <h2 class="section-title">Now Showing</h2>
-            <p class="section-subtitle">Catch the latest movies on the big screen</p>
-          </div>
-
-          <!-- Genre Filter Pills -->
-          <div class="filter-bar" id="genreFilters">
-            <button class="filter-chip active" data-genre="all">All Movies</button>
-            <button class="filter-chip" data-genre="Action">Action</button>
-            <button class="filter-chip" data-genre="Sci-Fi">Sci-Fi</button>
-            <button class="filter-chip" data-genre="Drama">Drama</button>
-            <button class="filter-chip" data-genre="Thriller">Thriller</button>
-            <button class="filter-chip" data-genre="Comedy">Comedy</button>
-          </div>
+        <!-- Genre Filter Pills -->
+        <div class="filter-bar" id="genreFilters" style="margin-bottom: 30px;">
+          <button class="filter-chip active" data-genre="all">All Genres</button>
+          <button class="filter-chip" data-genre="Action">Action</button>
+          <button class="filter-chip" data-genre="Sci-Fi">Sci-Fi</button>
+          <button class="filter-chip" data-genre="Drama">Drama</button>
+          <button class="filter-chip" data-genre="Thriller">Thriller</button>
+          <button class="filter-chip" data-genre="Animation">Animation</button>
         </div>
 
         <!-- Error Message Alert -->
         <div id="moviesError" class="alert alert-error hidden" role="alert">
-          <span>Failed to load movies. Please check if the server is running.</span>
+          <span>Failed to load movies from MySQL. Please verify backend server.</span>
         </div>
 
         <!-- Loading Spinner State -->
         <div id="moviesLoading" class="loading-container">
           <div class="spinner"></div>
-          <p>Loading available movies...</p>
+          <p>Syncing live catalog from MySQL database...</p>
         </div>
 
         <!-- Movies Grid Container -->
@@ -114,42 +183,126 @@
         <div id="noMoviesFound" class="empty-state hidden">
           <div class="empty-state-icon">🎥</div>
           <h3>No Movies Found</h3>
-          <p>We couldn't find any movies matching your search query. Try searching for something else!</p>
-          <button class="btn btn-secondary" id="resetSearchBtn">Clear Search</button>
+          <p>We couldn't find any movies matching your current filters. Try resetting the search or choosing another category!</p>
+          <button class="btn btn-secondary" id="resetSearchBtn">Clear Filters</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Popular Theatres Section -->
+    <section class="section-padding" id="theatres" style="background: rgba(0, 0, 0, 0.2); border-top: 1px solid var(--border-color);">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Popular Cinema Theatres</h2>
+            <p class="section-subtitle">Experience movies in IMAX, 4DX, and Dolby Atmos screens near you</p>
+          </div>
+        </div>
+
+        <div id="theatresGrid" class="theatres-grid">
+          <!-- Dynamically loaded via js/main.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- Offers & Coupons Section -->
+    <section class="section-padding" id="offers">
+      <div class="container">
+        <div class="section-header">
+          <div>
+            <h2 class="section-title">Special Offers &amp; Promo Codes</h2>
+            <p class="section-subtitle">Apply exclusive discount vouchers during ticket checkout</p>
+          </div>
+        </div>
+
+        <div id="offersGrid" class="offers-grid">
+          <!-- Dynamically loaded via js/main.js -->
         </div>
       </div>
     </section>
   </main>
 
+  <!-- User Authentication Modal (Login / Register) -->
+  <div id="authModal" class="modal-overlay" role="dialog" aria-modal="true" style="display: none;">
+    <div class="modal-card" style="max-width: 440px;">
+      <button type="button" class="modal-close-btn" id="closeAuthModalBtn">&times;</button>
+      
+      <div class="modal-header text-center" style="margin-bottom: 20px;">
+        <span style="font-size: 2.5rem;">🎬</span>
+        <h2 class="modal-title" id="authModalTitle">Welcome to CinePass</h2>
+        <p class="section-subtitle" id="authModalSubtitle">Sign in to book tickets, manage reservations &amp; save movies</p>
+      </div>
+
+      <!-- Auth Tabs: Login vs Register -->
+      <div class="category-tabs" style="margin-bottom: 20px;">
+        <button class="category-tab-btn active" id="tabLoginBtn" style="font-size: 0.95rem; flex: 1; text-align: center;">Sign In</button>
+        <button class="category-tab-btn" id="tabRegisterBtn" style="font-size: 0.95rem; flex: 1; text-align: center;">Create Account</button>
+      </div>
+
+      <!-- Alert Message inside modal -->
+      <div id="authAlert" class="alert hidden" style="margin-bottom: 16px;"></div>
+
+      <!-- Login Form -->
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" class="form-control" placeholder="akshat@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 10px;">
+          <span>Sign In to Account</span>
+        </button>
+        <p style="font-size: 0.8rem; color: var(--text-muted); text-align: center; margin-top: 14px;">
+          Demo accounts: <strong>akshat@example.com</strong> or <strong>rahul@example.com</strong> (Password: <code>user123</code>)
+        </p>
+      </form>
+
+      <!-- Register Form (Hidden by default) -->
+      <form id="registerForm" class="hidden">
+        <div class="form-group">
+          <label class="form-label" for="regName">Full Name</label>
+          <input type="text" id="regName" class="form-control" placeholder="Akshat Tomar" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="regEmail">Email Address</label>
+          <input type="email" id="regEmail" class="form-control" placeholder="you@example.com" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="regPhone">Mobile Number</label>
+          <input type="tel" id="regPhone" class="form-control" placeholder="+91 9876543210">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="regPassword">Create Password</label>
+          <input type="password" id="regPassword" class="form-control" placeholder="Min. 6 characters" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block btn-lg" style="margin-top: 10px;">
+          <span>Register Account</span>
+        </button>
+      </form>
+    </div>
+  </div>
+
   <!-- Footer -->
   <footer class="footer">
     <div class="container footer-content">
-      <div class="footer-brand">🎬 MovieBook</div>
-      <p>Movie Ticket Booking System &copy; 2026. Designed with passion for cinema lovers.</p>
+      <div class="footer-brand">🎬 CinePass Prime</div>
+      <p>DBMS Capstone Project: Enterprise Movie Ticket Booking Platform with Real MySQL Database Synchronization &amp; ACID Transactions &copy; 2026.</p>
       <ul class="footer-links">
         <li><a href="index.html">Home</a></li>
         <li><a href="#movies">Movies</a></li>
+        <li><a href="#theatres">Theatres</a></li>
+        <li><a href="#offers">Coupons</a></li>
         <li><a href="bookings.html">My Bookings</a></li>
-        <li><a href="admin.html">Admin Panel</a></li>
+        <li><a href="admin.html">Admin Dashboard</a></li>
       </ul>
     </div>
   </footer>
 
-  <!-- Mobile Nav Script Helper -->
-  <script>
-    const navToggle = document.getElementById('navToggle');
-    const navLinks = document.getElementById('navLinks');
-    if (navToggle && navLinks) {
-      navToggle.addEventListener('click', () => {
-        navToggle.classList.toggle('active');
-        navLinks.classList.toggle('active');
-        const expanded = navToggle.getAttribute('aria-expanded') === 'true' || false;
-        navToggle.setAttribute('aria-expanded', !expanded);
-      });
-    }
-  </script>
-
-  <!-- Main JavaScript File -->
+  <!-- JavaScript Files -->
+  <script src="js/profile.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

@@ -1,42 +1,54 @@
 const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const pool = require('../config/db');
+const {
+    getAllMovies,
+    addMovie,
+    updateMovie,
+    deleteMovie
+} = require('./movieController');
+const { addShow } = require('./showController');
+const { activeAdminTokens } = require('../middleware/authMiddleware');
 
-// In-memory token store for admin authentication
+// In-memory token store for legacy admin authentication
 const activeTokens = new Map();
 
-// Admin login
-const adminLogin = (req, res) => {
+/**
+ * Admin login authentication
+ */
+const adminLogin = async (req, res) => {
     try {
         const { username, password } = req.body;
-
-        const expectedUsername = process.env.ADMIN_USERNAME;
-        const expectedPassword = process.env.ADMIN_PASSWORD;
-
         if (!username || !password) {
             return res.status(400).json({
                 success: false,
-                message: 'Username and password are required'
+                message: 'Username (email) and password are required'
             });
         }
-
-        // Compare credentials directly with environment variables
-        if (username === expectedUsername && password === expectedPassword) {
-            const token = crypto.randomBytes(32).toString('hex');
-            activeTokens.set(token, {
-                username,
-                loginTime: new Date()
-            });
-
-            return res.status(200).json({
-                success: true,
-                message: 'Login successful',
-                token
-            });
+        // Normalize email
+        const normalizedEmail = username.trim().toLowerCase();
+        // Look up admin user in DB (role = 'ADMIN')
+        const [rows] = await pool.query(
+            'SELECT user_id, password_hash FROM users WHERE email = ? AND role = ?',
+            [normalizedEmail, 'ADMIN']
+        );
+        if (rows.length === 0) {
+            return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
         }
-
-        return res.status(401).json({
-            success: false,
-            message: 'Invalid credentials'
+        const adminUser = rows[0];
+        const isMatch = await bcrypt.compare(password, adminUser.password_hash);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, message: 'Invalid admin credentials' });
+        }
+        // Generate token and store in memory
+        const token = crypto.randomBytes(32).toString('hex');
+        activeTokens.set(token, { username: normalizedEmail, loginTime: new Date() });
+        activeAdminTokens.add(token);
+        return res.status(200).json({
+            success: true,
+            message: 'Admin login successful',
+            token,
+            user: { name: 'CinePass Administrator', role: 'ADMIN' }
         });
     } catch (err) {
         console.error('Error in adminLogin:', err);
@@ -48,7 +60,9 @@ const adminLogin = (req, res) => {
     }
 };
 
-// Admin logout
+/**
+ * Admin logout
+ */
 const adminLogout = (req, res) => {
     try {
         const authHeader = req.headers.authorization;
@@ -56,6 +70,7 @@ const adminLogout = (req, res) => {
             const token = authHeader.split(' ')[1];
             if (token) {
                 activeTokens.delete(token);
+                activeAdminTokens.delete(token);
             }
         }
 
@@ -73,12 +88,15 @@ const adminLogout = (req, res) => {
     }
 };
 
-// Verify admin token session
+/**
+ * Verify admin token session
+ */
 const verifyAdmin = (req, res) => {
     if (req.isAdmin) {
         return res.status(200).json({
             success: true,
-            message: 'Authenticated'
+            message: 'Authenticated as Administrator',
+            user: { role: 'ADMIN', name: 'Administrator' }
         });
     }
     return res.status(401).json({
@@ -87,259 +105,63 @@ const verifyAdmin = (req, res) => {
     });
 };
 
-// Add a new movie
-const addMovie = async (req, res) => {
-    try {
-        const {
-            title,
-            genre,
-            duration_minutes,
-            language,
-            description,
-            poster_url,
-            release_date
-        } = req.body;
-
-        // Validate required fields
-        if (!title || !genre || duration_minutes === undefined || !language) {
-            return res.status(400).json({
-                success: false,
-                message: 'Required fields: title, genre, duration_minutes, language'
-            });
-        }
-
-        const duration = parseInt(duration_minutes, 10);
-        if (isNaN(duration) || duration <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'duration_minutes must be a positive integer'
-            });
-        }
-
-        const [result] = await pool.query(
-            `INSERT INTO movies (title, genre, duration_minutes, language, description, poster_url, release_date)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [
-                title.trim(),
-                genre.trim(),
-                duration,
-                language.trim(),
-                description ? description.trim() : null,
-                poster_url ? poster_url.trim() : null,
-                release_date || null
-            ]
-        );
-
-        return res.status(201).json({
-            success: true,
-            message: 'Movie added successfully',
-            data: { movie_id: result.insertId }
-        });
-    } catch (err) {
-        console.error('Error adding movie:', err);
-        return res.status(500).json({
-            success: false,
-            message: 'Internal server error while adding movie',
-            error: err.message
-        });
-    }
-};
-
-// Update an existing movie
-const updateMovie = async (req, res) => {
-    try {
-        const movieId = parseInt(req.params.id, 10);
-        if (isNaN(movieId) || movieId <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid movie ID. ID must be a positive number.'
-            });
-        }
-
-        const {
-            title,
-            genre,
-            duration_minutes,
-            language,
-            description,
-            poster_url,
-            release_date
-        } = req.body;
-
-        if (!title || !genre || duration_minutes === undefined || !language) {
-            return res.status(400).json({
-                success: false,
-                message: 'Required fields: title, genre, duration_minutes, language'
-            });
-        }
-
-        const duration = parseInt(duration_minutes, 10);
-        if (isNaN(duration) || duration <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'duration_minutes must be a positive integer'
-            });
-        }
-
-        const [result] = await pool.query(
-            `UPDATE movies
-             SET title = ?, genre = ?, duration_minutes = ?, language = ?, description = ?, poster_url = ?, release_date = ?
-             WHERE movie_id = ?`,
-            [
-                title.trim(),
-                genre.trim(),
-                duration,
-                language.trim(),
-                description ? description.trim() : null,
-                poster_url ? poster_url.trim() : null,
-                release_date || null,
-                movieId
-            ]
-        );
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Movie not found'
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: 'Movie updated successfully'
-        });
-    } catch (err) {
-        console.error('Error updating movie:', err);
-        return res.status(500).json({
-            success: false,
-            message: 'Internal server error while updating movie',
-            error: err.message
-        });
-    }
-};
-
-// Delete a movie (only if no existing shows)
-const deleteMovie = async (req, res) => {
-    try {
-        const movieId = parseInt(req.params.id, 10);
-        if (isNaN(movieId) || movieId <= 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Invalid movie ID. ID must be a positive number.'
-            });
-        }
-
-        // Check if movie has existing shows
-        const [showCountRows] = await pool.query(
-            'SELECT COUNT(*) as count FROM shows WHERE movie_id = ?',
-            [movieId]
-        );
-
-        const showCount = showCountRows[0].count;
-        if (showCount > 0) {
-            return res.status(400).json({
-                success: false,
-                message: 'Cannot delete movie with existing shows. Delete all shows first.'
-            });
-        }
-
-        const [result] = await pool.query('DELETE FROM movies WHERE movie_id = ?', [movieId]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Movie not found'
-            });
-        }
-
-        return res.status(200).json({
-            success: true,
-            message: 'Movie deleted successfully'
-        });
-    } catch (err) {
-        console.error('Error deleting movie:', err);
-        return res.status(500).json({
-            success: false,
-            message: 'Internal server error while deleting movie',
-            error: err.message
-        });
-    }
-};
-
-// Add a new show for a movie
-const addShow = async (req, res) => {
-    try {
-        const { movie_id, show_date, show_time, ticket_price, total_seats } = req.body;
-
-        // Validate required fields
-        if (movie_id === undefined || !show_date || !show_time || ticket_price === undefined || total_seats === undefined) {
-            return res.status(400).json({
-                success: false,
-                message: 'All fields are required: movie_id, show_date, show_time, ticket_price, total_seats'
-            });
-        }
-
-        const movieId = parseInt(movie_id, 10);
-        const price = parseFloat(ticket_price);
-        const seats = parseInt(total_seats, 10);
-
-        if (isNaN(movieId) || movieId <= 0) {
-            return res.status(400).json({ success: false, message: 'Invalid movie_id' });
-        }
-        if (isNaN(price) || price < 0) {
-            return res.status(400).json({ success: false, message: 'Invalid ticket_price' });
-        }
-        if (isNaN(seats) || seats <= 0) {
-            return res.status(400).json({ success: false, message: 'total_seats must be a positive integer' });
-        }
-
-        // Verify movie exists
-        const [movieRows] = await pool.query('SELECT movie_id FROM movies WHERE movie_id = ?', [movieId]);
-        if (!movieRows || movieRows.length === 0) {
-            return res.status(404).json({
-                success: false,
-                message: 'Movie not found'
-            });
-        }
-
-        // Insert new show with available_seats initialized to total_seats
-        const [result] = await pool.query(
-            `INSERT INTO shows (movie_id, show_date, show_time, ticket_price, total_seats, available_seats)
-             VALUES (?, ?, ?, ?, ?, ?)`,
-            [movieId, show_date, show_time, price, seats, seats]
-        );
-
-        return res.status(201).json({
-            success: true,
-            message: 'Show added successfully',
-            data: { show_id: result.insertId }
-        });
-    } catch (err) {
-        console.error('Error adding show:', err);
-        return res.status(500).json({
-            success: false,
-            message: 'Internal server error while adding show',
-            error: err.message
-        });
-    }
-};
-
-// Retrieve all customer bookings across all movies and shows
+/**
+ * Retrieve all customer bookings with search and filter
+ */
 const getAllBookings = async (req, res) => {
     try {
-        const [rows] = await pool.query(
-            `SELECT b.booking_id, c.customer_name, c.email, m.title AS movie_title,
-                    s.show_date, s.show_time, b.number_of_tickets,
-                    b.total_amount, b.booking_status, b.booking_date
-             FROM bookings b
-             INNER JOIN customers c ON b.customer_id = c.customer_id
-             INNER JOIN shows s ON b.show_id = s.show_id
-             INNER JOIN movies m ON s.movie_id = m.movie_id
-             ORDER BY b.booking_date DESC`
-        );
+        const { search, status } = req.query;
+        let query = `
+            SELECT b.booking_id,
+                   COALESCE(b.booking_reference, CONCAT('BK-', LPAD(b.booking_id, 6, '0'))) AS booking_reference,
+                   COALESCE(u.name, c.customer_name) AS customer_name,
+                   COALESCE(u.email, c.email) AS email,
+                   m.title AS movie_title,
+                   m.poster_url,
+                   COALESCE(t.name, 'CinePass Grand Multiplex') AS theatre_name,
+                   COALESCE(sc.screen_name, 'Audi 1') AS screen_name,
+                   s.show_date,
+                   s.show_time,
+                   b.number_of_tickets,
+                   b.seat_numbers,
+                   b.total_amount,
+                   b.convenience_fee,
+                   b.discount_amount,
+                   b.coupon_code,
+                   b.booking_status,
+                   b.payment_status,
+                   b.booking_date,
+                   p.transaction_id
+            FROM bookings b
+            LEFT JOIN customers c ON b.customer_id = c.customer_id
+            LEFT JOIN users u ON b.user_id = u.user_id
+            INNER JOIN shows s ON b.show_id = s.show_id
+            INNER JOIN movies m ON s.movie_id = m.movie_id
+            LEFT JOIN screens sc ON s.screen_id = sc.screen_id
+            LEFT JOIN theatres t ON (sc.theatre_id = t.theatre_id OR s.theatre_id = t.theatre_id)
+            LEFT JOIN payments p ON b.booking_id = p.booking_id
+            WHERE 1=1
+        `;
+        const params = [];
+
+        if (status && status !== 'all') {
+            query += ' AND b.booking_status = ?';
+            params.push(status.trim().toUpperCase());
+        }
+
+        if (search && search.trim()) {
+            query += ' AND (b.booking_reference LIKE ? OR c.customer_name LIKE ? OR c.email LIKE ? OR m.title LIKE ?)';
+            const term = `%${search.trim()}%`;
+            params.push(term, term, term, term);
+        }
+
+        query += ' ORDER BY b.booking_date DESC';
+
+        const [rows] = await pool.query(query, params);
 
         return res.status(200).json({
             success: true,
+            count: rows.length,
             data: rows
         });
     } catch (err) {
@@ -352,11 +174,54 @@ const getAllBookings = async (req, res) => {
     }
 };
 
-// Get admin dashboard statistics
+/**
+ * Retrieve most popular movies ranked by tickets sold and gross revenue
+ */
+const getPopularMovies = async (req, res) => {
+    try {
+        const [rows] = await pool.query(
+            `SELECT 
+                m.movie_id,
+                m.title AS movie_title,
+                m.genre,
+                m.rating,
+                COUNT(DISTINCT s.show_id) AS total_scheduled_shows,
+                COALESCE(SUM(CASE WHEN b.booking_status = 'CONFIRMED' THEN b.number_of_tickets ELSE 0 END), 0) AS tickets_sold,
+                COALESCE(SUM(CASE WHEN b.booking_status = 'CONFIRMED' THEN b.total_amount ELSE 0.00 END), 0.00) AS total_revenue
+             FROM movies m
+             LEFT JOIN shows s ON m.movie_id = s.movie_id
+             LEFT JOIN bookings b ON s.show_id = b.show_id
+             GROUP BY m.movie_id, m.title, m.genre, m.rating
+             ORDER BY tickets_sold DESC, total_revenue DESC
+             LIMIT 10`
+        );
+
+        return res.status(200).json({
+            success: true,
+            data: rows
+        });
+    } catch (err) {
+        console.error('Error fetching popular movies:', err);
+        return res.status(500).json({
+            success: false,
+            message: 'Internal server error while fetching popular movies',
+            error: err.message
+        });
+    }
+};
+
+/**
+ * Get comprehensive admin statistics
+ */
 const getAdminStats = async (req, res) => {
     try {
         const [movieCountRows] = await pool.query('SELECT COUNT(*) AS total_movies FROM movies');
+        const [theatreCountRows] = await pool.query('SELECT COUNT(*) AS total_theatres FROM theatres');
+        const [showCountRows] = await pool.query('SELECT COUNT(*) AS total_shows FROM shows');
         const [bookingCountRows] = await pool.query('SELECT COUNT(*) AS total_bookings FROM bookings');
+        const [userCountRows] = await pool.query('SELECT COUNT(*) AS total_users FROM users WHERE role = "CUSTOMER"');
+        const [couponCountRows] = await pool.query('SELECT COUNT(*) AS total_coupons FROM coupons WHERE is_active = TRUE');
+
         const [confirmedStatsRows] = await pool.query(
             `SELECT COALESCE(SUM(total_amount), 0) AS total_revenue,
                     COALESCE(SUM(number_of_tickets), 0) AS total_tickets_sold
@@ -364,8 +229,58 @@ const getAdminStats = async (req, res) => {
              WHERE booking_status = 'CONFIRMED'`
         );
 
+        // Popular movies
+        const [popularMovies] = await pool.query(
+            `SELECT 
+                m.movie_id,
+                m.title AS movie_title,
+                m.genre,
+                m.rating,
+                COUNT(DISTINCT s.show_id) AS total_scheduled_shows,
+                COALESCE(SUM(CASE WHEN b.booking_status = 'CONFIRMED' THEN b.number_of_tickets ELSE 0 END), 0) AS tickets_sold,
+                COALESCE(SUM(CASE WHEN b.booking_status = 'CONFIRMED' THEN b.total_amount ELSE 0.00 END), 0.00) AS total_revenue
+             FROM movies m
+             LEFT JOIN shows s ON m.movie_id = s.movie_id
+             LEFT JOIN bookings b ON s.show_id = b.show_id
+             GROUP BY m.movie_id, m.title, m.genre, m.rating
+             ORDER BY tickets_sold DESC, total_revenue DESC
+             LIMIT 6`
+        );
+
+        // Top Theatres
+        const [topTheatres] = await pool.query(
+            `SELECT 
+                t.theatre_id,
+                t.name AS theatre_name,
+                t.city,
+                COUNT(b.booking_id) AS total_bookings,
+                COALESCE(SUM(CASE WHEN b.booking_status = 'CONFIRMED' THEN b.total_amount ELSE 0.00 END), 0.00) AS total_revenue
+             FROM theatres t
+             LEFT JOIN shows s ON t.theatre_id = s.theatre_id
+             LEFT JOIN bookings b ON s.show_id = b.show_id
+             GROUP BY t.theatre_id, t.name, t.city
+             ORDER BY total_revenue DESC, total_bookings DESC
+             LIMIT 5`
+        );
+
+        // Daily booking counts for recent days
+        const [dailyStats] = await pool.query(
+            `SELECT DATE(booking_date) AS booking_day,
+                    COUNT(booking_id) AS bookings_count,
+                    COALESCE(SUM(total_amount), 0.00) AS revenue
+             FROM bookings
+             WHERE booking_status = 'CONFIRMED'
+             GROUP BY DATE(booking_date)
+             ORDER BY booking_day DESC
+             LIMIT 7`
+        );
+
         const totalMovies = Number(movieCountRows[0].total_movies) || 0;
+        const totalTheatres = Number(theatreCountRows[0].total_theatres) || 0;
+        const totalShows = Number(showCountRows[0].total_shows) || 0;
         const totalBookings = Number(bookingCountRows[0].total_bookings) || 0;
+        const totalUsers = Number(userCountRows[0].total_users) || 0;
+        const totalCoupons = Number(couponCountRows[0].total_coupons) || 0;
         const totalRevenue = Number(parseFloat(confirmedStatsRows[0].total_revenue).toFixed(2)) || 0;
         const totalTicketsSold = Number(confirmedStatsRows[0].total_tickets_sold) || 0;
 
@@ -373,9 +288,16 @@ const getAdminStats = async (req, res) => {
             success: true,
             data: {
                 totalMovies,
+                totalTheatres,
+                totalShows,
                 totalBookings,
+                totalUsers,
+                totalCoupons,
                 totalRevenue,
-                totalTicketsSold
+                totalTicketsSold,
+                popularMovies,
+                topTheatres,
+                dailyStats
             }
         });
     } catch (err) {
@@ -393,10 +315,12 @@ module.exports = {
     adminLogin,
     adminLogout,
     verifyAdmin,
+    getAllMovies,
     addMovie,
     updateMovie,
     deleteMovie,
     addShow,
     getAllBookings,
-    getAdminStats
+    getAdminStats,
+    getPopularMovies
 };

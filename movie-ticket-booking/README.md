@@ -28,6 +28,7 @@ A complete, web-based movie ticket booking system built as a Database Management
 | **Vanilla CSS3** | Custom dark cinema theme, CSS grid/flexbox, animations, and responsive layouts |
 | **Node.js** | Server-side JavaScript runtime environment |
 | **Express.js** | Lightweight RESTful routing and static asset web server |
+| **CORS** | Cross-Origin Resource Sharing middleware |
 | **MySQL 8.0+** | Relational Database Management System (RDBMS) |
 | **mysql2** | High-performance MySQL driver with Promise and connection pooling support |
 | **dotenv** | Environment variable management for zero-leak configuration |
@@ -57,7 +58,7 @@ erDiagram
 
     SHOWS {
         int show_id PK "AUTO_INCREMENT"
-        int movie_id FK "REFERENCES movies(movie_id) ON DELETE CASCADE"
+        int movie_id FK "REFERENCES movies(movie_id) ON DELETE RESTRICT"
         date show_date "NOT NULL"
         time show_time "NOT NULL"
         decimal ticket_price "CHECK > 0"
@@ -225,7 +226,7 @@ movie-ticket-booking/
 │   ├── movieController.js    # Movie catalog retrieval and details
 │   └── showController.js     # Showtimes retrieval by movie ID
 ├── database/
-│   ├── queries.sql           # 14 DBMS analytical and operational queries
+│   ├── queries.sql           # 16 DBMS analytical, operational, and ACID transaction queries
 │   ├── schema.sql            # DDL: schema, tables, constraints, view, procedure, trigger
 │   └── seed.sql              # DML: initial sample dataset for movies, shows, and bookings
 ├── middleware/
